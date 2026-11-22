@@ -22,6 +22,13 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
+fun LituturNavGraph(
+    navController: NavHostController = rememberNavController()
+) {
+    LituturAppNavigation(navController = navController)
+}
+
+@Composable
 fun LituturAppNavigation(
     navController: NavHostController = rememberNavController()
 ) {
