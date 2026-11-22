@@ -35,7 +35,7 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = TextSecondarySlate,
 
     outline = BorderDividerColor,
-    outlineVariant = TextMutedSlate,
+    outlineVariant = BorderDividerColor,
 
     error = AlertDangerCoral,
     onError = CardContainerSurface,

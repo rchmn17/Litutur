@@ -3,12 +3,12 @@ package com.example.litutur.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // A. Primary Brand Colors
-val CoralOrangePrimary = Color(0xFFFF5733)
+val CoralOrangePrimary = Color(0xFFFF6B4A)
 val CoralOrangeAccent = Color(0xFFFF6B4A)
 val CoralOrangeDark = Color(0xFFE64A19)
 val CoralOrangePressed = Color(0xFFD84315)
 
-val SecondaryBrandGreen = Color(0xFF00D084)
+val SecondaryBrandGreen = Color(0xFF22C55E)
 val SecondaryGreenAccent = Color(0xFF22C55E)
 
 // B. Secondary & Semantic Functional Colors
