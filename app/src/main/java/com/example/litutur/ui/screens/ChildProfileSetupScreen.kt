@@ -77,10 +77,10 @@ fun ChildProfileSetupScreen(
     }
 
     val avatars = listOf(
-        "Kelinci" to "Kelinci Ceria 🐰",
-        "Singa" to "Singa Berani 🦁",
-        "Rubah" to "Rubah Pintar 🦊",
-        "Beruang" to "Beruang Hangat 🐻"
+        Triple("Kelinci", "Kelinci Ceria 🐰", "🐰"),
+        Triple("Singa", "Singa Berani 🦁", "🦁"),
+        Triple("Rubah", "Rubah Pintar 🦊", "🦊"),
+        Triple("Beruang", "Beruang Hangat 🐻", "🐻")
     )
 
     val ageRanges = listOf(
@@ -255,7 +255,7 @@ fun ChildProfileSetupScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        avatars.forEach { (shortName, fullName) ->
+                        avatars.forEach { (shortName, fullName, avatarIcon) ->
                             val isSelected = selectedAvatar == fullName
                             Card(
                                 shape = RoundedCornerShape(16.dp),
@@ -282,10 +282,10 @@ fun ChildProfileSetupScreen(
                                             .background(if (isSelected) Color(0xFFFDE68A) else Color(0xFFE2E8F0)),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Face,
-                                            contentDescription = null,
-                                            tint = if (isSelected) Color(0xFFD97706) else Color(0xFF64748B)
+                                        Text(
+                                            text = avatarIcon,
+                                            fontSize = 28.sp,
+                                            lineHeight = 32.sp
                                         )
                                         if (isSelected) {
                                             Box(
