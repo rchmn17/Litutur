@@ -38,6 +38,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -70,8 +71,10 @@ import com.example.litutur.ui.theme.SecondaryBrandGreen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParentRegistrationScreen(
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
     onBack: () -> Unit = {},
-    onNextToChildProfile: () -> Unit = {},
+    onRegisterSubmit: (name: String, email: String, whatsapp: String, password: String) -> Unit = { _, _, _, _ -> },
     onNavigateToLogin: () -> Unit = {}
 ) {
     var parentName by remember { mutableStateOf("") }
@@ -415,28 +418,62 @@ fun ParentRegistrationScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    if (errorMessage != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFFFEF2F2))
+                                .border(1.dp, Color(0xFFFECACA), RoundedCornerShape(10.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = errorMessage,
+                                fontSize = 12.sp,
+                                color = Color(0xFFDC2626),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
                     // CTA Button
                     Button(
-                        onClick = onNextToChildProfile,
-                        enabled = isTermsAccepted,
+                        onClick = { onRegisterSubmit(parentName, parentEmail, parentWa, password) },
+                        enabled = isTermsAccepted && !isLoading,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = SecondaryBrandGreen),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
-                        Text(
-                            text = "Lanjut: Profil Anak",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Mendaftarkan Akun...",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        } else {
+                            Text(
+                                text = "Lanjut: Profil Anak",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }

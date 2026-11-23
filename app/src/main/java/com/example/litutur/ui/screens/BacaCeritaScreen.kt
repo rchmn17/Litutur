@@ -163,7 +163,7 @@ fun BacaCeritaScreen(
                     }
                 }
 
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = showRoarEffect,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut(),

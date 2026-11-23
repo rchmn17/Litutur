@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Forum
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.HorizontalDivider
@@ -27,15 +27,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.litutur.data.model.CommunityPostEntity
+import com.example.litutur.data.model.ParentMissionEntity
 import com.example.litutur.ui.model.ParentNavTab
 import com.example.litutur.ui.theme.CoralOrangePrimary
 import com.example.litutur.ui.theme.LituturTheme
+import com.example.litutur.ui.viewmodel.ParentUiState
 
 @Composable
 fun ParentMainScreen(
+    uiState: ParentUiState = ParentUiState(),
     onSwitchToChildMode: () -> Unit = {},
+    onSelectChild: (Int) -> Unit = {},
+    onAddChildClick: () -> Unit = {},
+    onRecordReading: (title: String, category: String, minutes: Int, quizScore: Int) -> Unit = { _, _, _, _ -> },
+    onToggleMission: (ParentMissionEntity) -> Unit = {},
+    onAddCustomMission: (title: String, description: String) -> Unit = { _, _ -> },
+    onRefreshCommunity: () -> Unit = {},
     onNavigateToCreatePost: () -> Unit = {},
-    onNavigateToPostDetail: () -> Unit = {},
+    onLikePost: (CommunityPostEntity) -> Unit = {},
+    onOpenPostDetail: (CommunityPostEntity) -> Unit = {},
+    onUpdatePin: (String) -> Unit = {},
+    onUpdateDailyLimit: (Int) -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(ParentNavTab.HOME) }
@@ -48,95 +61,50 @@ fun ParentMainScreen(
                     containerColor = Color.White,
                     tonalElevation = 0.dp
                 ) {
+                    val navColors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = CoralOrangePrimary,
+                        selectedTextColor = CoralOrangePrimary,
+                        unselectedIconColor = Color(0xFF64748B),
+                        unselectedTextColor = Color(0xFF64748B),
+                        indicatorColor = Color.White
+                    )
                     NavigationBarItem(
                         selected = selectedTab == ParentNavTab.HOME,
                         onClick = { selectedTab = ParentNavTab.HOME },
                         icon = { Icon(Icons.Default.Home, contentDescription = "Beranda") },
-                        label = {
-                            Text(
-                                "Beranda",
-                                fontWeight = if (selectedTab == ParentNavTab.HOME) FontWeight.Bold else FontWeight.Medium
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CoralOrangePrimary,
-                            selectedTextColor = CoralOrangePrimary,
-                            unselectedIconColor = Color(0xFF64748B),
-                            unselectedTextColor = Color(0xFF64748B),
-                            indicatorColor = Color.White
-                        )
+                        label = { Text("Beranda", fontWeight = if (selectedTab == ParentNavTab.HOME) FontWeight.Bold else FontWeight.Medium) },
+                        colors = navColors
                     )
                     NavigationBarItem(
                         selected = selectedTab == ParentNavTab.MONITORING,
                         onClick = { selectedTab = ParentNavTab.MONITORING },
                         icon = { Icon(Icons.Default.BarChart, contentDescription = "Monitoring") },
-                        label = {
-                            Text(
-                                "Monitoring",
-                                fontWeight = if (selectedTab == ParentNavTab.MONITORING) FontWeight.Bold else FontWeight.Medium
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CoralOrangePrimary,
-                            selectedTextColor = CoralOrangePrimary,
-                            unselectedIconColor = Color(0xFF64748B),
-                            unselectedTextColor = Color(0xFF64748B),
-                            indicatorColor = Color.White
-                        )
+                        label = { Text("Monitoring", fontWeight = if (selectedTab == ParentNavTab.MONITORING) FontWeight.Bold else FontWeight.Medium) },
+                        colors = navColors
                     )
                     NavigationBarItem(
                         selected = selectedTab == ParentNavTab.MISSIONS,
                         onClick = { selectedTab = ParentNavTab.MISSIONS },
                         icon = { Icon(Icons.Default.TaskAlt, contentDescription = "Misi") },
-                        label = {
-                            Text(
-                                "Misi",
-                                fontWeight = if (selectedTab == ParentNavTab.MISSIONS) FontWeight.Bold else FontWeight.Medium
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CoralOrangePrimary,
-                            selectedTextColor = CoralOrangePrimary,
-                            unselectedIconColor = Color(0xFF64748B),
-                            unselectedTextColor = Color(0xFF64748B),
-                            indicatorColor = Color.White
-                        )
+                        label = { Text("Misi", fontWeight = if (selectedTab == ParentNavTab.MISSIONS) FontWeight.Bold else FontWeight.Medium) },
+                        colors = navColors
                     )
                     NavigationBarItem(
                         selected = selectedTab == ParentNavTab.COMMUNITY,
-                        onClick = { selectedTab = ParentNavTab.COMMUNITY },
-                        icon = { Icon(Icons.Default.Forum, contentDescription = "Komunitas") },
-                        label = {
-                            Text(
-                                "Komunitas",
-                                fontWeight = if (selectedTab == ParentNavTab.COMMUNITY) FontWeight.Bold else FontWeight.Medium
-                            )
+                        onClick = {
+                            selectedTab = ParentNavTab.COMMUNITY
+                            onRefreshCommunity()
                         },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CoralOrangePrimary,
-                            selectedTextColor = CoralOrangePrimary,
-                            unselectedIconColor = Color(0xFF64748B),
-                            unselectedTextColor = Color(0xFF64748B),
-                            indicatorColor = Color.White
-                        )
+                        icon = { Icon(Icons.Default.Forum, contentDescription = "Komunitas") },
+                        label = { Text("Komunitas", fontWeight = if (selectedTab == ParentNavTab.COMMUNITY) FontWeight.Bold else FontWeight.Medium) },
+                        colors = navColors
                     )
                     NavigationBarItem(
                         selected = selectedTab == ParentNavTab.SETTINGS,
                         onClick = { selectedTab = ParentNavTab.SETTINGS },
                         icon = { Icon(Icons.Default.Settings, contentDescription = "Pengaturan") },
-                        label = {
-                            Text(
-                                "Pengaturan",
-                                fontWeight = if (selectedTab == ParentNavTab.SETTINGS) FontWeight.Bold else FontWeight.Medium
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = CoralOrangePrimary,
-                            selectedTextColor = CoralOrangePrimary,
-                            unselectedIconColor = Color(0xFF64748B),
-                            unselectedTextColor = Color(0xFF64748B),
-                            indicatorColor = Color.White
-                        )
+                        label = { Text("Pengaturan", fontWeight = if (selectedTab == ParentNavTab.SETTINGS) FontWeight.Bold else FontWeight.Medium) },
+                        colors = navColors
                     )
                 }
             }
@@ -148,14 +116,38 @@ fun ParentMainScreen(
                 .padding(innerPadding)
         ) {
             when (selectedTab) {
-                ParentNavTab.HOME -> ParentHomeScreen(onSwitchToChildMode = onSwitchToChildMode)
-                ParentNavTab.MONITORING -> ParentAnalyticsScreen()
-                ParentNavTab.MISSIONS -> ParentMissionsScreen()
-                ParentNavTab.COMMUNITY -> ParentCommunityScreen(
-                    onNavigateToCreatePost = onNavigateToCreatePost,
-                    onNavigateToPostDetail = onNavigateToPostDetail
+                ParentNavTab.HOME -> ParentHomeScreen(
+                    uiState = uiState,
+                    onSwitchToChildMode = onSwitchToChildMode,
+                    onSelectChild = onSelectChild,
+                    onAddChildClick = onAddChildClick,
+                    onOpenMissions = { selectedTab = ParentNavTab.MISSIONS },
+                    onOpenMonitoring = { selectedTab = ParentNavTab.MONITORING }
                 )
-                ParentNavTab.SETTINGS -> ParentSettingsScreen(onLogout = onLogout)
+                ParentNavTab.MONITORING -> ParentAnalyticsScreen(
+                    uiState = uiState,
+                    onSelectChild = onSelectChild,
+                    onRecordReading = onRecordReading
+                )
+                ParentNavTab.MISSIONS -> ParentMissionsScreen(
+                    uiState = uiState,
+                    onSelectChild = onSelectChild,
+                    onToggleMission = onToggleMission,
+                    onAddCustomMission = onAddCustomMission
+                )
+                ParentNavTab.COMMUNITY -> ParentCommunityScreen(
+                    uiState = uiState,
+                    onRefresh = onRefreshCommunity,
+                    onNavigateToCreatePost = onNavigateToCreatePost,
+                    onLikePost = onLikePost,
+                    onOpenPostDetail = onOpenPostDetail
+                )
+                ParentNavTab.SETTINGS -> ParentSettingsScreen(
+                    uiState = uiState,
+                    onUpdatePin = onUpdatePin,
+                    onUpdateDailyLimit = onUpdateDailyLimit,
+                    onLogout = onLogout
+                )
             }
         }
     }

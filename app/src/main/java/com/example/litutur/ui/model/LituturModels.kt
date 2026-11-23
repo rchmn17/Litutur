@@ -8,6 +8,7 @@ enum class LituturScreen {
     PARENT_REGISTRATION,
     CHILD_PROFILE_SETUP,
     PARENT_MAIN,
+    CHILD_MODE,
     POST_DETAIL,
     CREATE_POST
 }
