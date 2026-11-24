@@ -1,5 +1,9 @@
 package com.example.litutur.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
@@ -34,10 +39,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -54,10 +61,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.litutur.ui.theme.LituturTheme
 import com.example.litutur.ui.theme.SecondaryBrandGreen
 import com.example.litutur.ui.theme.WarmAmberGold
@@ -65,12 +74,23 @@ import com.example.litutur.ui.theme.WarmAmberGold
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ChildProfileSetupScreen(
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
     onBack: () -> Unit = {},
-    onStartAdventure: () -> Unit = {}
+    onSaveProfile: (name: String, ageRange: String, avatarName: String, topics: List<String>, photoUri: Uri?) -> Unit = { _, _, _, _, _ -> }
 ) {
     var selectedAvatar by remember { mutableStateOf("Kelinci Ceria 🐰") }
-    var childName by remember { mutableStateOf("Kayla") }
+    var selectedPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    var childName by remember { mutableStateOf("") }
     var selectedAgeRange by remember { mutableStateOf("5-6 Thn") }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            selectedPhotoUri = uri
+        }
+    }
 
     val selectedTopics = remember {
         mutableStateListOf("Hewan", "Petualangan", "Fabel & Dongeng")
@@ -314,6 +334,52 @@ fun ChildProfileSetupScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Optional custom child photo upload (Cloudinary)
+                    OutlinedButton(
+                        onClick = {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        enabled = !isLoading,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (selectedPhotoUri != null) {
+                            AsyncImage(
+                                model = selectedPhotoUri,
+                                contentDescription = "Foto Anak",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Foto Dipilih • Ketuk untuk Ganti",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF7C3AED)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.AddAPhoto,
+                                contentDescription = null,
+                                tint = Color(0xFF7C3AED),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Unggah Foto Anak (Opsional)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF7C3AED)
+                            )
                         }
                     }
 
@@ -573,25 +639,68 @@ fun ChildProfileSetupScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (errorMessage != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFFFEF2F2))
+                        .border(1.dp, Color(0xFFFECACA), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = errorMessage,
+                        fontSize = 12.sp,
+                        color = Color(0xFFDC2626),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             // CTA Button
             Button(
-                onClick = onStartAdventure,
+                onClick = {
+                    onSaveProfile(
+                        childName,
+                        selectedAgeRange,
+                        selectedAvatar,
+                        selectedTopics.toList(),
+                        selectedPhotoUri
+                    )
+                },
+                enabled = !isLoading,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = WarmAmberGold),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Text(
-                    text = "Mulai Petualangan Literasi!",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "🚀", fontSize = 18.sp)
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = Color(0xFF0F172A),
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Menyimpan Profil...",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                } else {
+                    Text(
+                        text = "Mulai Petualangan Literasi!",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "🚀", fontSize = 18.sp)
+                }
             }
         }
     }

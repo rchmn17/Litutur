@@ -41,6 +41,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -76,15 +77,20 @@ import com.example.litutur.ui.theme.WarmAmberGold
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
+    infoMessage: String? = null,
     onBack: () -> Unit = {},
-    onLoginSuccess: () -> Unit = {},
+    onLoginSubmit: (email: String, password: String, isParentMode: Boolean) -> Unit = { _, _, _ -> },
+    onForgotPassword: (email: String) -> Unit = {},
     onNavigateToRegister: () -> Unit = {}
 ) {
-    var emailText by remember { mutableStateOf("bunda.sari@litutur.id") }
-    var passwordText by remember { mutableStateOf("12345678") }
+    var emailText by remember { mutableStateOf("") }
+    var passwordText by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(true) }
     var isParentModeTab by remember { mutableStateOf(true) }
+    var googleNotice by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -364,7 +370,7 @@ fun LoginScreen(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF4F46E5),
-                                modifier = Modifier.clickable { }
+                                modifier = Modifier.clickable { onForgotPassword(emailText) }
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -423,34 +429,95 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    val displayError = errorMessage ?: googleNotice
+                    if (displayError != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFFFEF2F2))
+                                .border(1.dp, Color(0xFFFECACA), RoundedCornerShape(10.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = displayError,
+                                fontSize = 12.sp,
+                                color = Color(0xFFDC2626),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+
+                    if (infoMessage != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFFECFDF5))
+                                .border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(10.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = infoMessage,
+                                fontSize = 12.sp,
+                                color = Color(0xFF047857),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+
                     // Submit CTA Button
                     Button(
-                        onClick = onLoginSuccess,
+                        onClick = {
+                            googleNotice = null
+                            onLoginSubmit(emailText, passwordText, isParentModeTab)
+                        },
+                        enabled = !isLoading,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
-                        Text(
-                            text = "Masuk ke LITUTUR",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Memproses...",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        } else {
+                            Text(
+                                text = "Masuk ke LITUTUR",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Google Login Button
                     OutlinedButton(
-                        onClick = onLoginSuccess,
+                        onClick = {
+                            googleNotice = "Silakan masuk menggunakan Email & Kata Sandi yang terdaftar."
+                        },
+                        enabled = !isLoading,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
