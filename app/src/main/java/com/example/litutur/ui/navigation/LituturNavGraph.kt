@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.litutur.ui.model.LituturScreen
 import com.example.litutur.ui.parent.ParentMainScreen
+import com.example.litutur.ui.screens.*
 import com.example.litutur.ui.screens.AlbumStikerScreen
 import com.example.litutur.ui.screens.BacaCeritaScreen
 import com.example.litutur.ui.screens.ChildProfileSetupScreen

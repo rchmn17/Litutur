@@ -53,6 +53,15 @@ dependencies {
     // Navigation & Coil Image Loader
     implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // Firebase BoM, Firestore, Auth
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
+
+    // Cloudinary Android SDK
+    implementation(libs.cloudinary.android)
 
     // Firebase (Spark Plan: Auth & Firestore)
     implementation(platform(libs.firebase.bom))
