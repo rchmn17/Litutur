@@ -29,6 +29,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun BacaCeritaScreen(
+    bookTitle: String = "Singa yang Baik Hati",
     onBackClick: () -> Unit = {},
     onNextChapter: () -> Unit = {}
 ) {
@@ -67,7 +68,7 @@ fun BacaCeritaScreen(
                         ) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Kembali", tint = LituturTextDark)
                         }
-                        Text("Baca Cerita", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Text(bookTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = LituturTextDark, maxLines = 1)
                     }
 
                     Row(

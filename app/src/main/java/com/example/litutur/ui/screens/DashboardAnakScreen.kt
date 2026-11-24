@@ -37,6 +37,9 @@ data class CeritaBuku(
 
 @Composable
 fun DashboardAnakScreen(
+    childName: String = "Budi",
+    childPoints: Int = 120,
+    onRequestParentMode: () -> Unit = {},
     onNavigateToRead: (String) -> Unit = {},
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
@@ -110,7 +113,7 @@ fun DashboardAnakScreen(
                         }
                         Column {
                             Text("LITUTUR ANAK", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturOutline)
-                            Text("Halo, Budi! 🌟", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Text("Halo, $childName! 🌟", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                         }
                     }
 
@@ -127,10 +130,10 @@ fun DashboardAnakScreen(
                         ) {
                             Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("120 Poin", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Text("$childPoints Poin", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                         }
                         IconButton(
-                            onClick = {},
+                            onClick = onRequestParentMode,
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(12.dp))

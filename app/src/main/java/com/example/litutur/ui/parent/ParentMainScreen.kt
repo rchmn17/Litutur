@@ -1,5 +1,10 @@
 package com.example.litutur.ui.parent
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,8 +21,11 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,11 +57,22 @@ fun ParentMainScreen(
     onOpenPostDetail: (CommunityPostEntity) -> Unit = {},
     onUpdatePin: (String) -> Unit = {},
     onUpdateDailyLimit: (Int) -> Unit = {},
+    onClearMessages: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf(ParentNavTab.HOME) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.statusMessage, uiState.errorMessage) {
+        val message = uiState.statusMessage ?: uiState.errorMessage
+        if (!message.isNullOrBlank()) {
+            snackbarHostState.showSnackbar(message)
+            onClearMessages()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             Column {
                 HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
@@ -115,39 +134,47 @@ fun ParentMainScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (selectedTab) {
-                ParentNavTab.HOME -> ParentHomeScreen(
-                    uiState = uiState,
-                    onSwitchToChildMode = onSwitchToChildMode,
-                    onSelectChild = onSelectChild,
-                    onAddChildClick = onAddChildClick,
-                    onOpenMissions = { selectedTab = ParentNavTab.MISSIONS },
-                    onOpenMonitoring = { selectedTab = ParentNavTab.MONITORING }
-                )
-                ParentNavTab.MONITORING -> ParentAnalyticsScreen(
-                    uiState = uiState,
-                    onSelectChild = onSelectChild,
-                    onRecordReading = onRecordReading
-                )
-                ParentNavTab.MISSIONS -> ParentMissionsScreen(
-                    uiState = uiState,
-                    onSelectChild = onSelectChild,
-                    onToggleMission = onToggleMission,
-                    onAddCustomMission = onAddCustomMission
-                )
-                ParentNavTab.COMMUNITY -> ParentCommunityScreen(
-                    uiState = uiState,
-                    onRefresh = onRefreshCommunity,
-                    onNavigateToCreatePost = onNavigateToCreatePost,
-                    onLikePost = onLikePost,
-                    onOpenPostDetail = onOpenPostDetail
-                )
-                ParentNavTab.SETTINGS -> ParentSettingsScreen(
-                    uiState = uiState,
-                    onUpdatePin = onUpdatePin,
-                    onUpdateDailyLimit = onUpdateDailyLimit,
-                    onLogout = onLogout
-                )
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(220)) togetherWith fadeOut(animationSpec = tween(160))
+                },
+                label = "ParentTabTransition"
+            ) { tab ->
+                when (tab) {
+                    ParentNavTab.HOME -> ParentHomeScreen(
+                        uiState = uiState,
+                        onSwitchToChildMode = onSwitchToChildMode,
+                        onSelectChild = onSelectChild,
+                        onAddChildClick = onAddChildClick,
+                        onOpenMissions = { selectedTab = ParentNavTab.MISSIONS },
+                        onOpenMonitoring = { selectedTab = ParentNavTab.MONITORING }
+                    )
+                    ParentNavTab.MONITORING -> ParentAnalyticsScreen(
+                        uiState = uiState,
+                        onSelectChild = onSelectChild,
+                        onRecordReading = onRecordReading
+                    )
+                    ParentNavTab.MISSIONS -> ParentMissionsScreen(
+                        uiState = uiState,
+                        onSelectChild = onSelectChild,
+                        onToggleMission = onToggleMission,
+                        onAddCustomMission = onAddCustomMission
+                    )
+                    ParentNavTab.COMMUNITY -> ParentCommunityScreen(
+                        uiState = uiState,
+                        onRefresh = onRefreshCommunity,
+                        onNavigateToCreatePost = onNavigateToCreatePost,
+                        onLikePost = onLikePost,
+                        onOpenPostDetail = onOpenPostDetail
+                    )
+                    ParentNavTab.SETTINGS -> ParentSettingsScreen(
+                        uiState = uiState,
+                        onUpdatePin = onUpdatePin,
+                        onUpdateDailyLimit = onUpdateDailyLimit,
+                        onLogout = onLogout
+                    )
+                }
             }
         }
     }

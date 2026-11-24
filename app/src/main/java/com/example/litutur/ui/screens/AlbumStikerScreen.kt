@@ -39,22 +39,28 @@ data class StikerHewan(
 
 @Composable
 fun AlbumStikerScreen(
+    childName: String = "Budi",
+    childPoints: Int = 135,
+    storiesCount: Int = 0,
+    onRequestParentMode: () -> Unit = {},
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedFilterIndex by remember { mutableStateOf(0) }
-    val filters = listOf("Semua (24)", "Sahabat Rimba (8)", "Petualang Langit (6)", "Bintang Laut (6)", "Legendaris (4)")
+    val filters = listOf("Semua (6)", "Sahabat Rimba", "Petualang Langit", "Legendaris")
 
-    val stickers = remember {
+    val stickers = remember(storiesCount) {
         listOf(
             StikerHewan("Leo Singa", "https://lh3.googleusercontent.com/aida-public/AB6AXuBJ5mHf8G0M15Voefy2MTmlGvGwhsjWmIgxFlACRwLiwvxJ98JNcpSTx1N5IeYqpOqhyzxyz9IEGkL1pVh_kiagmnxsuFSw2U1HihSruMoYTmjrucLyDHvcJnICmyytzF-acdjZ5Nu6K7AGo6uJMg8ZQnuE7YskaKQpPK8xhtgN-NJXmpW_0j0HacirOb6M6uQoiA4iUoju05I28Q3ZbbcbYoz9s3nUrwDtvgZGungc", "Leo Singa: Rawrr ceria! 🦁", false, "Lvl 1"),
-            StikerHewan("Kelinci Ceria", "https://lh3.googleusercontent.com/aida-public/AB6AXuDUUMx2TSYoKhZwSIEHjQb3jv6L4dw4M3kYHcEnxIk72iZ6i0shtbjj-l98JTyOByZ-mlynbhF7ym_yUgAHnE5o9jwFDRz-_uJcJxGZ-ZjlGF7ZIa8iQ6mmSItRdlA991UCvGlkL9VTewFUsKaICjVecKfVGBGGjd_xBcUxIIlygewk7fZMnPqcufYacBXkVtL5-iy1kuDGGlODE4DvLpV19flaVdozwOuOzSsGDdVM", "Kelinci Ceria: Hop hop senang! 🐰", false, "Lvl 1"),
-            StikerHewan("Kancil Cerdik", "https://lh3.googleusercontent.com/aida-public/AB6AXuDUkxy0eP7Y7yN0DLskfzvocBBrwKgdZKEDhX1eTPFLoNXV7dhTc1OeEwZ0Rzx2QVaHkB-R2si5a3j2oMsoZ85lBBeX46_Eaw5qi4OU4XtyfiT_s7GwW8ZXzcNh_moIW78Icnarhkxo8VfWLrrYXqQZQ7KFmHqVJo4UGYMVv2KgRmkpNbuMWgkC6pOpDQ4PdEAWUUbYCxnO6fiQKcpDhdL3vmr6S0-qcb5gyda-eglH", "Kancil Cerdik: Siap berpetualang!", false, "Lvl 2"),
-            StikerHewan("Burung Hantu", "https://lh3.googleusercontent.com/aida-public/AB6AXuAEBr3z4JawPmT-irh9R3xBCU3BRHCfzTOuhKl_U5tjm2w_korbCcEGuVhc_iXU23ufygJkj-6kVFxv99IYxvdWleio0dZugoA4k3rI73WLZNcelc-42YTOKzfHDxGfa7-gRngQUulkXM3-Vs8pn1r6zdPRdItIO8mrcj2O3H4hGhM4PHluO7ZJbRFTisCz1864cmgDQnlk0ETaehMzBub6euoGtJZlwhChxvG3-z_C", "Hantu Bijak: Hoot hoot!", false, "Lvl 2"),
-            StikerHewan("Gajah Ramah", "https://lh3.googleusercontent.com/aida-public/AB6AXuCB5s0CW6951d4itUO9q0Y-aYXB2PZ8yivlJvhDHwGjKWsM_m5Rx_f56NOBuyNDzI6O6WME5gxmwgDBGsxCLxiJkw6EQAAWpaFvVqUcLa9gnPl6Nc6Wm6uNWuyGv-5gBFlHxA6HsAH3jOlCl_-JMYYEBQh5KMFGUimsA_CPPcSqFbW3pztA2U9C6I_gzDf-acUj5LQpaO4ue3IMpINwb0XOG6rrI8DhAg2OAQHA5J58", "Gajah: Teeeet semburan air! 🐘", false, "Lvl 2"),
-            StikerHewan("Harimau Rimba", "", "", true, "Streak 10 Hari")
+            StikerHewan("Kelinci Ceria", "https://lh3.googleusercontent.com/aida-public/AB6AXuDUUMx2TSYoKhZwSIEHjQb3jv6L4dw4M3kYHcEnxIk72iZ6i0shtbjj-l98JTyOByZ-mlynbhF7ym_yUgAHnE5o9jwFDRz-_uJcJxGZ-ZjlGF7ZIa8iQ6mmSItRdlA991UCvGlkL9VTewFUsKaICjVecKfVGBGGjd_xBcUxIIlygewk7fZMnPqcufYacBXkVtL5-iy1kuDGGlODE4DvLpV19flaVdozwOuOzSsGDdVM", "Kelinci Ceria: Hop hop senang! 🐰", storiesCount < 1, "Baca 1 Cerita"),
+            StikerHewan("Kancil Cerdik", "https://lh3.googleusercontent.com/aida-public/AB6AXuDUkxy0eP7Y7yN0DLskfzvocBBrwKgdZKEDhX1eTPFLoNXV7dhTc1OeEwZ0Rzx2QVaHkB-R2si5a3j2oMsoZ85lBBeX46_Eaw5qi4OU4XtyfiT_s7GwW8ZXzcNh_moIW78Icnarhkxo8VfWLrrYXqQZQ7KFmHqVJo4UGYMVv2KgRmkpNbuMWgkC6pOpDQ4PdEAWUUbYCxnO6fiQKcpDhdL3vmr6S0-qcb5gyda-eglH", "Kancil Cerdik: Siap berpetualang!", storiesCount < 2, "Baca 2 Cerita"),
+            StikerHewan("Burung Hantu", "https://lh3.googleusercontent.com/aida-public/AB6AXuAEBr3z4JawPmT-irh9R3xBCU3BRHCfzTOuhKl_U5tjm2w_korbCcEGuVhc_iXU23ufygJkj-6kVFxv99IYxvdWleio0dZugoA4k3rI73WLZNcelc-42YTOKzfHDxGfa7-gRngQUulkXM3-Vs8pn1r6zdPRdItIO8mrcj2O3H4hGhM4PHluO7ZJbRFTisCz1864cmgDQnlk0ETaehMzBub6euoGtJZlwhChxvG3-z_C", "Hantu Bijak: Hoot hoot!", storiesCount < 3, "Baca 3 Cerita"),
+            StikerHewan("Gajah Ramah", "https://lh3.googleusercontent.com/aida-public/AB6AXuCB5s0CW6951d4itUO9q0Y-aYXB2PZ8yivlJvhDHwGjKWsM_m5Rx_f56NOBuyNDzI6O6WME5gxmwgDBGsxCLxiJkw6EQAAWpaFvVqUcLa9gnPl6Nc6Wm6uNWuyGv-5gBFlHxA6HsAH3jOlCl_-JMYYEBQh5KMFGUimsA_CPPcSqFbW3pztA2U9C6I_gzDf-acUj5LQpaO4ue3IMpINwb0XOG6rrI8DhAg2OAQHA5J58", "Gajah: Teeeet semburan air! 🐘", storiesCount < 4, "Baca 4 Cerita"),
+            StikerHewan("Harimau Rimba", "", "", storiesCount < 5, "Baca 5 Cerita")
         )
     }
+    val unlockedCount = stickers.count { !it.isLocked }
+    val unlockedProgress = unlockedCount.toFloat() / stickers.size.coerceAtLeast(1).toFloat()
 
     Scaffold(
         topBar = {
@@ -68,20 +74,34 @@ fun AlbumStikerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Koleksi Stiker Budi ⭐", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                        Text("Tempel dan dengarkan suara sahabat rimba!", fontSize = 11.sp, color = LituturOutline)
+                        Text("Koleksi Stiker $childName ⭐", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Text("Selesaikan bacaan & kuis untuk membuka stiker!", fontSize = 11.sp, color = LituturOutline)
                     }
 
                     Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(LituturSurfaceHigh)
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("135 Koin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(LituturSurfaceHigh)
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("$childPoints Koin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        }
+                        IconButton(
+                            onClick = onRequestParentMode,
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(LituturSurfaceVariant)
+                        ) {
+                            Icon(Icons.Filled.Lock, contentDescription = "Kunci Orang Tua", tint = LituturTextVariant)
+                        }
                     }
                 }
             }
@@ -121,10 +141,10 @@ fun AlbumStikerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Progres Album Seri 1", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                        Text("12 / 24 Terkumpul (50%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturSecondary)
+                        Text("$unlockedCount / ${stickers.size} Terkumpul (${(unlockedProgress * 100).toInt()}%)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturSecondary)
                     }
                     LinearProgressIndicator(
-                        progress = { 0.5f },
+                        progress = { unlockedProgress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)

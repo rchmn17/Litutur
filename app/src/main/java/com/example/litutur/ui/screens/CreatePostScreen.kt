@@ -45,34 +45,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.net.Uri
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import coil.compose.AsyncImage
-import com.example.litutur.data.CloudinaryHelper
-import com.example.litutur.data.FirestoreHelper
-import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import com.example.litutur.ui.theme.CoralOrangePrimary
 import com.example.litutur.ui.theme.LituturTheme
@@ -100,38 +86,6 @@ fun CreatePostScreen(
     }
 
     val selectedMilestone = uiState.autoMilestones.firstOrNull { it.id == selectedMilestoneId }
-
-    val publishPost: () -> Unit = {
-        if (!isPublishing && postText.isNotBlank()) {
-            isPublishing = true
-            coroutineScope.launch {
-                try {
-                    // 1. Upload to Cloudinary if photo selected
-                    val uploadedPhotoUrl = selectedImageUri?.let { uri ->
-                        CloudinaryHelper.uploadImage(uri)
-                    }
-
-                    val milestone = milestoneOptions.find { it.id == selectedBadgeId }
-
-                    // 2. Save post and photo URL to Firestore
-                    FirestoreHelper.createPost(
-                        caption = postText,
-                        imageUrl = uploadedPhotoUrl,
-                        authorName = "Orang Tua Kayla",
-                        authorTitle = "Bunda Kayla (5 thn)",
-                        milestoneTitle = milestone?.title
-                    )
-
-                    Toast.makeText(context, "Postingan berhasil dibagikan!", Toast.LENGTH_SHORT).show()
-                    onPublishSuccess()
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Gagal membagikan: ${e.message}", Toast.LENGTH_LONG).show()
-                } finally {
-                    isPublishing = false
-                }
-            }
-        }
-    }
 
     Scaffold(
         topBar = {

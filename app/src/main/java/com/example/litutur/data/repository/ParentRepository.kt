@@ -51,7 +51,8 @@ class ParentRepository(
     suspend fun addReadingLog(
         uid: String,
         childId: String,
-        log: ReadingLogEntity
+        log: ReadingLogEntity,
+        pointsEarned: Int = 15
     ): Result<ReadingLogEntity> = withContext(Dispatchers.IO) {
         try {
             val logId = log.id.ifBlank { UUID.randomUUID().toString() }
@@ -59,11 +60,10 @@ class ParentRepository(
             val childRef = usersCol.document(uid).collection("children").document(childId)
             childRef.collection("reading_logs").document(logId).set(finalLog).await()
 
-            // Also increment child's minutesUsedToday and points
             childRef.update(
                 mapOf(
                     "minutesUsedToday" to FieldValue.increment(finalLog.durationMinutes.toLong()),
-                    "points" to FieldValue.increment(15L)
+                    "points" to FieldValue.increment(pointsEarned.toLong())
                 )
             ).await()
 

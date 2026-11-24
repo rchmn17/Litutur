@@ -26,6 +26,10 @@ import com.example.litutur.ui.theme.*
 
 @Composable
 fun KuisSelesaiScreen(
+    childName: String = "Jagoan",
+    bookTitle: String = "Singa yang Baik Hati",
+    quizScore: Int = 100,
+    earnedPoints: Int = 25,
     onClaimReward: () -> Unit = {},
     onReadMoreBooks: () -> Unit = {}
 ) {
@@ -91,9 +95,9 @@ fun KuisSelesaiScreen(
                     Text("MISI SELESAI", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturPurpleDark)
                 }
 
-                Text("Luar Biasa, Jagoan! 🎉", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                Text("Luar Biasa, $childName! 🎉", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                 Text(
-                    "Kamu berhasil menjawab semua pertanyaan kuis dengan sempurna!",
+                    "Kamu menyelesaikan \"$bookTitle\" dengan skor $quizScore% dan mendapat +$earnedPoints Poin!",
                     fontSize = 13.sp,
                     color = LituturTextVariant,
                     textAlign = TextAlign.Center

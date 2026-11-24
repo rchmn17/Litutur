@@ -26,10 +26,6 @@ object CloudinaryUploader {
             .build()
     }
 
-    /**
-     * Uploads an image Uri to Cloudinary using the unsigned preset.
-     * Runs on Dispatchers.IO and returns Result<String> containing the secure_url.
-     */
     suspend fun uploadImage(
         context: Context,
         imageUri: Uri,

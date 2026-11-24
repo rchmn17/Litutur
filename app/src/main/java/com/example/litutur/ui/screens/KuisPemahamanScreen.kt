@@ -27,8 +27,9 @@ data class QuizOption(val id: String, val letter: String, val text: String)
 
 @Composable
 fun KuisPemahamanScreen(
+    bookTitle: String = "Singa yang Baik Hati",
     onBackClick: () -> Unit = {},
-    onQuizComplete: () -> Unit = {}
+    onQuizComplete: (quizScore: Int, pointsEarned: Int) -> Unit = { _, _ -> }
 ) {
     var selectedOptionId by remember { mutableStateOf("B") }
 
@@ -272,7 +273,12 @@ fun KuisPemahamanScreen(
                 shadowColor = LituturPurpleDark,
                 cornerRadius = 16.dp,
                 shadowDepth = 4.dp,
-                onClick = onQuizComplete
+                onClick = {
+                    val isCorrect = selectedOptionId == "B"
+                    val score = if (isCorrect) 100 else 65
+                    val points = if (isCorrect) 25 else 10
+                    onQuizComplete(score, points)
+                }
             ) {
                 Row(
                     modifier = Modifier

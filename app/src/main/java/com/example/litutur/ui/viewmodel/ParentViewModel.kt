@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
 import java.util.Calendar
 
 data class LiteracyAnalysis(
-    val dailyCounts: List<Int> = List(7) { 0 }, // Index 0 = Senin .. 6 = Minggu
+    val dailyCounts: List<Int> = List(7) { 0 },
     val totalStoriesRead: Int = 0,
     val totalDurationMinutes: Int = 0,
     val averageQuizScore: Int = 0,
@@ -64,6 +64,9 @@ data class ParentUiState(
     val communityPosts: List<CommunityPostEntity> = emptyList(),
     val selectedPost: CommunityPostEntity? = null,
     val selectedPostComments: List<PostCommentEntity> = emptyList(),
+    val lastCompletedStoryTitle: String = "Singa yang Baik Hati",
+    val lastQuizScore: Int = 100,
+    val lastEarnedPoints: Int = 25,
     val statusMessage: String? = null,
     val errorMessage: String? = null
 ) {
@@ -101,7 +104,6 @@ class ParentViewModel(
         }
 
         if (uid == null) {
-            // Guest mode fallback with local analytics
             loadGuestPreviewData()
             return
         }
@@ -145,7 +147,6 @@ class ParentViewModel(
         val logs = parentRepository.getReadingLogs(uid, child.id).getOrDefault(emptyList())
         val missions = parentRepository.getMissions(uid, child.id).getOrDefault(emptyList())
 
-        // Run Problem Solving computations off the Main Thread (Dispatchers.Default)
         val analysis = withContext(Dispatchers.Default) {
             computeLiteracyAnalysis(child, logs)
         }
@@ -168,11 +169,6 @@ class ParentViewModel(
         }
     }
 
-    /**
-     * Fungsi 1 (Problem Solving):
-     * Mengolah riwayat bacaan & skor kuis anak menjadi grafik harian (S-S-R-K-J-S-M),
-     * persentase perkembangan, pemetaan minat, dan kesimpulan otomatis Status Literasi Anak.
-     */
     private fun computeLiteracyAnalysis(
         child: ChildProfileEntity,
         logs: List<ReadingLogEntity>
@@ -187,13 +183,10 @@ class ParentViewModel(
         val totalMinutes = logs.sumOf { it.durationMinutes }
         val avgQuiz = if (logs.isNotEmpty()) logs.map { it.quizScore }.average().toInt() else 0
 
-        // Combine reading consistency (50%) + quiz comprehension (50%)
         val consistencyScore = ((totalStories.coerceAtMost(5) / 5f) * 100).toInt()
         val literacyPercent = if (totalStories == 0) 0 else ((consistencyScore * 0.5f) + (avgQuiz * 0.5f)).toInt()
-
         val activeDays = dailyCounts.count { it > 0 }
 
-        // Interest breakdown from reading logs + initial favorite topics
         val categoryCounts = mutableMapOf<String, Int>()
         child.favoriteTopics.forEach { topic -> categoryCounts[topic] = (categoryCounts[topic] ?: 0) + 1 }
         logs.forEach { log ->
@@ -229,11 +222,6 @@ class ParentViewModel(
         )
     }
 
-    /**
-     * Fungsi 2 (Problem Solving - Offline Bonding Prompts):
-     * Menganalisis cerita terbaru yang dibaca anak (sinopsis, karakter, kuis) untuk membuat
-     * bahan obrolan fisik orang tua & anak; jika belum membaca, mengambil topik minat utama anak.
-     */
     private fun generateBondingPrompt(
         child: ChildProfileEntity,
         logs: List<ReadingLogEntity>
@@ -277,10 +265,6 @@ class ParentViewModel(
         }
     }
 
-    /**
-     * Fungsi 4 (Problem Solving - Auto Milestone Attachment):
-     * Menarik data pencapaian nyata anak dari Firestore untuk dilampirkan otomatis pada postingan komunitas.
-     */
     private fun generateAutoMilestones(
         child: ChildProfileEntity,
         analysis: LiteracyAnalysis,
@@ -313,13 +297,100 @@ class ParentViewModel(
         )
     }
 
+    /**
+     * Integrasi Mode Anak -> Firestore -> Mode Orang Tua:
+     * Dipanggil saat anak menyelesaikan kuis setelah membaca cerita.
+     */
+    fun completeChildReadingAndQuiz(
+        storyTitle: String,
+        quizScore: Int,
+        pointsEarned: Int,
+        durationMinutes: Int = 8
+    ) {
+        val category = when {
+            storyTitle.contains("Singa", ignoreCase = true) ||
+                storyTitle.contains("Kelinci", ignoreCase = true) ||
+                storyTitle.contains("Kancil", ignoreCase = true) -> "Fabel & Dongeng"
+            storyTitle.contains("Bintang", ignoreCase = true) -> "Sains & Alam"
+            else -> "Petualangan"
+        }
+
+        val moralLesson = when {
+            storyTitle.contains("Singa", ignoreCase = true) -> "Rasa peduli dan saling tolong-menolong"
+            storyTitle.contains("Kelinci", ignoreCase = true) -> "Ketekunan dan tidak meremehkan orang lain"
+            storyTitle.contains("Bintang", ignoreCase = true) -> "Rasa ingin tahu terhadap alam semesta"
+            else -> "Kecerdikan dan keberanian menghadapi tantangan"
+        }
+
+        val calDay = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        val dayOfWeek = if (calDay == Calendar.SUNDAY) 7 else calDay - 1
+
+        val log = ReadingLogEntity(
+            id = "child_${System.currentTimeMillis()}",
+            storyTitle = storyTitle,
+            category = category,
+            durationMinutes = durationMinutes,
+            quizScore = quizScore,
+            dayOfWeek = dayOfWeek,
+            moralLesson = moralLesson,
+            synopsis = "Cerita \"$storyTitle\" bertema $category yang mengajarkan $moralLesson.",
+            characters = listOf("Tokoh Utama", "Sahabat Rimba"),
+            quizQuestions = listOf(
+                "Apa yang dilakukan tokoh utama di cerita \"$storyTitle\" saat melihat temannya kesulitan?",
+                "Pelajaran baik apa yang bisa kita tiru dari \"$storyTitle\" hari ini?"
+            )
+        )
+
+        val child = _uiState.value.selectedChild
+        val uid = _uiState.value.parentUser?.uid ?: authRepository.currentUserId()
+
+        _uiState.update {
+            it.copy(
+                lastCompletedStoryTitle = storyTitle,
+                lastQuizScore = quizScore,
+                lastEarnedPoints = pointsEarned
+            )
+        }
+
+        if (child != null) {
+            val updatedChild = child.copy(
+                points = child.points + pointsEarned,
+                minutesUsedToday = child.minutesUsedToday + durationMinutes
+            )
+            val updatedChildren = _uiState.value.children.map {
+                if (it.id == child.id) updatedChild else it
+            }
+            val updatedLogs = listOf(log) + _uiState.value.readingLogs
+            val analysis = computeLiteracyAnalysis(updatedChild, updatedLogs)
+            val bonding = generateBondingPrompt(updatedChild, updatedLogs)
+            val milestones = generateAutoMilestones(updatedChild, analysis, _uiState.value.missions)
+
+            _uiState.update {
+                it.copy(
+                    children = updatedChildren,
+                    readingLogs = updatedLogs,
+                    literacyAnalysis = analysis,
+                    bondingPrompt = bonding,
+                    autoMilestones = milestones
+                )
+            }
+
+            if (!uid.isNullOrBlank()) {
+                viewModelScope.launch {
+                    parentRepository.addReadingLog(uid, child.id, log, pointsEarned).onSuccess {
+                        loadChildDetails(uid, updatedChild)
+                    }
+                }
+            }
+        }
+    }
+
     fun toggleMission(mission: ParentMissionEntity) {
         val uid = _uiState.value.parentUser?.uid ?: authRepository.currentUserId()
         val child = _uiState.value.selectedChild
         val newCompleted = !mission.isCompleted
         val dayName = if (newCompleted) currentIndonesianDayName() else null
 
-        // Optimistic UI update
         val updatedMissions = _uiState.value.missions.map {
             if (it.id == mission.id) it.copy(isCompleted = newCompleted, completedDay = dayName) else it
         }
@@ -377,9 +448,6 @@ class ParentViewModel(
         }
     }
 
-    /**
-     * Records a reading session log to Firestore (also useful for testing live Monitoring & Bonding Prompts).
-     */
     fun recordReadingSession(
         storyTitle: String,
         category: String,
@@ -387,14 +455,14 @@ class ParentViewModel(
         quizScore: Int,
         moralLesson: String = "Keberanian dan saling menolong"
     ) {
-        val uid = _uiState.value.parentUser?.uid ?: authRepository.currentUserId() ?: return
+        val uid = _uiState.value.parentUser?.uid ?: authRepository.currentUserId()
         val child = _uiState.value.selectedChild ?: return
 
         val calDay = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        // Convert Calendar (Sun=1, Mon=2..Sat=7) -> (Mon=1..Sun=7)
         val dayOfWeek = if (calDay == Calendar.SUNDAY) 7 else calDay - 1
 
         val log = ReadingLogEntity(
+            id = "manual_${System.currentTimeMillis()}",
             storyTitle = storyTitle,
             category = category,
             durationMinutes = durationMinutes,
@@ -408,6 +476,23 @@ class ParentViewModel(
                 "Pelajaran apa yang bisa kita tiru dari cerita \"$storyTitle\"?"
             )
         )
+
+        if (uid.isNullOrBlank()) {
+            val updatedLogs = listOf(log) + _uiState.value.readingLogs
+            val analysis = computeLiteracyAnalysis(child, updatedLogs)
+            val bonding = generateBondingPrompt(child, updatedLogs)
+            val milestones = generateAutoMilestones(child, analysis, _uiState.value.missions)
+            _uiState.update {
+                it.copy(
+                    readingLogs = updatedLogs,
+                    literacyAnalysis = analysis,
+                    bondingPrompt = bonding,
+                    autoMilestones = milestones,
+                    statusMessage = "Aktivitas baca \"$storyTitle\" tercatat!"
+                )
+            }
+            return
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true) }
@@ -647,7 +732,7 @@ class ParentViewModel(
     private fun loadGuestPreviewData() {
         val guestChild = ChildProfileEntity(
             id = "guest_child",
-            name = "Kayla (Tamu)",
+            name = "Kayla",
             ageRange = "5-6 Thn",
             age = 6,
             favoriteTopics = listOf("Hewan", "Fabel & Dongeng", "Petualangan"),

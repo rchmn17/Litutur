@@ -26,10 +26,16 @@ import com.example.litutur.ui.theme.*
 
 @Composable
 fun PohonKisahScreen(
+    childName: String = "Budi",
+    childPoints: Int = 135,
+    storiesCount: Int = 0,
+    onRequestParentMode: () -> Unit = {},
     onNavigateToAlbum: () -> Unit = {},
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
-    var treeProgress by remember { mutableFloatStateOf(0.75f) }
+    var treeProgress by remember(childPoints) {
+        mutableFloatStateOf((childPoints / 200f).coerceIn(0.15f, 1f))
+    }
     var isWateredToday by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -55,21 +61,35 @@ fun PohonKisahScreen(
                         }
                         Column {
                             Text("LITUTUR ANAK", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = LituturOutline)
-                            Text("Halo, Budi! 🌟", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Text("Halo, $childName! 🌟", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                         }
                     }
 
                     Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(LituturSurfaceHigh)
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("135 Koin", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(LituturSurfaceHigh)
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("$childPoints Koin", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        }
+                        IconButton(
+                            onClick = onRequestParentMode,
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(LituturSurfaceVariant)
+                        ) {
+                            Icon(Icons.Filled.Lock, contentDescription = "Kunci Orang Tua", tint = LituturTextVariant)
+                        }
                     }
                 }
             }
@@ -152,7 +172,7 @@ fun PohonKisahScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        "🌱 Tumbuh berkat 12 dongeng!",
+                        "🌱 Tumbuh berkat $storiesCount dongeng!",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = LituturPrimary,

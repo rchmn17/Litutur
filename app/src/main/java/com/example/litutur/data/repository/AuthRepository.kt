@@ -26,7 +26,6 @@ class AuthRepository(
             if (profileResult.isSuccess) {
                 profileResult
             } else {
-                // Fallback if user exists in Firebase Auth but Firestore profile wasn't created yet
                 val fallback = ParentUser(
                     uid = uid,
                     name = authResult.user?.displayName ?: email.substringBefore("@"),
@@ -132,12 +131,10 @@ class AuthRepository(
 
             childRef.set(finalChild).await()
 
-            // Seed default Parent Missions if this child doesn't have missions yet
             val existingMissions = childRef.collection("missions").limit(1).get().await()
             if (existingMissions.isEmpty) {
-                val defaultMissions = defaultParentMissions()
                 val batch = firestore.batch()
-                defaultMissions.forEach { mission ->
+                defaultParentMissions().forEach { mission ->
                     val missionRef = childRef.collection("missions").document(mission.id)
                     batch.set(missionRef, mission)
                 }
