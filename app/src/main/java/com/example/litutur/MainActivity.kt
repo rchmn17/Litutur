@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.litutur.ui.navigation.LituturAppNavigation
 import com.example.litutur.ui.navigation.LituturNavGraph
 import com.example.litutur.ui.theme.LituturTheme
 
@@ -24,7 +23,6 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             LituturTheme {
-                LituturAppNavigation()
                 LituturNavGraph()
             }
         }

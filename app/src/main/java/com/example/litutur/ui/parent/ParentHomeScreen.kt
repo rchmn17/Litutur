@@ -1,7 +1,7 @@
 package com.example.litutur.ui.parent
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,35 +16,35 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.FamilyRestroom
-import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -53,26 +53,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.litutur.ui.theme.CoralOrangeAccent
+import coil.compose.AsyncImage
 import com.example.litutur.ui.theme.CoralOrangePrimary
 import com.example.litutur.ui.theme.LituturTheme
+import com.example.litutur.ui.viewmodel.ParentUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParentHomeScreen(
-    onSwitchToChildMode: () -> Unit = {}
+    uiState: ParentUiState = ParentUiState(),
+    onSwitchToChildMode: () -> Unit = {},
+    onSelectChild: (Int) -> Unit = {},
+    onAddChildClick: () -> Unit = {},
+    onOpenMissions: () -> Unit = {},
+    onOpenMonitoring: () -> Unit = {}
 ) {
+    val parentName = uiState.parentUser?.name?.ifBlank { "Orang Tua" } ?: "Orang Tua"
+    val activeChild = uiState.selectedChild
+    val analysis = uiState.literacyAnalysis
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -96,986 +101,442 @@ fun ParentHomeScreen(
                         Column {
                             Text(
                                 text = "LITUTUR PARENT",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    letterSpacing = 1.sp
-                                ),
+                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF006D37)
                             )
                             Text(
-                                text = "Parent Dashboard",
+                                text = "Halo, $parentName",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0D1C2E)
+                                color = Color(0xFF1E293B)
                             )
                         }
                     }
                 },
                 actions = {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 16.dp)
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(CoralOrangePrimary),
-                        contentAlignment = Alignment.Center
+                    Button(
+                        onClick = onSwitchToChildMode,
+                        shape = RoundedCornerShape(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = CoralOrangePrimary),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(end = 12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profil Bunda",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            imageVector = Icons.Default.ChildCare,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Mode Anak", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFF8F9FF)
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F9FD))
             )
         },
-        containerColor = Color(0xFFF8F9FF)
+        containerColor = Color(0xFFF8F9FD)
     ) { innerPadding ->
+        if (uiState.isLoading && uiState.children.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = CoralOrangePrimary)
+            }
+            return@Scaffold
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+                .padding(innerPadding),
+            contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(4.dp)) }
-
-            // 1. Parent Greeting & Notification
+            // 1. Weekly Parent Mission Overview Card
             item {
-                ParentGreetingSection()
-            }
-
-            // 2. Active Child Switcher & Switch to Child Mode Banner
-            item {
-                ActiveChildCard(onSwitchToChildMode = onSwitchToChildMode)
-            }
-
-            // 3. Weekly Mission Tracker Banner
-            item {
-                WeeklyMissionBanner()
-            }
-
-            // 4. Quick Child Comparison (Pantauan Anak)
-            item {
-                ChildComparisonSection()
-            }
-
-            // 5. Literacy Development Visual Card (Perkembangan Budi)
-            item {
-                LiteracyDevelopmentCard()
-            }
-
-            // 6. Highlighted Offline Bonding Prompt Card
-            item {
-                BondingPromptCard()
-            }
-
-            // 7. Recent Reading Activities Summary
-            item {
-                RecentActivitiesSection()
-            }
-
-            item { Spacer(modifier = Modifier.height(24.dp)) }
-        }
-    }
-}
-
-@Composable
-private fun ParentGreetingSection() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                text = "SELAMAT PAGI",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
-                color = Color(0xFF006D37),
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Hai Bunda Sari! ✨",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0D1C2E)
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFDCE9FF)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notifikasi",
-                tint = Color(0xFF0D1C2E),
-                modifier = Modifier.size(24.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 8.dp, end = 8.dp)
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(CoralOrangePrimary)
-            )
-        }
-    }
-}
-
-@Composable
-private fun ActiveChildCard(
-    onSwitchToChildMode: () -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Box(
+                Card(
+                    shape = RoundedCornerShape(22.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF006D37)),
                     modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE6EEFF)),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .clickable(onClick = onOpenMissions)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Face,
-                        contentDescription = "Avatar Budi",
-                        tint = Color(0xFF006397),
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Budi",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0D1C2E)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50.dp))
-                                .background(Color(0xFFDCE9FF))
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "6 Thn",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF59413C)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF006D37))
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Aktif Belajar",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF006D37),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Button(
-                onClick = onSwitchToChildMode,
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = CoralOrangeAccent
-                ),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.RocketLaunch,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Mode Anak",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun WeeklyMissionBanner() {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFDCE9FF)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "MISI MEMBACA",
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
-                        color = Color(0xFF006397),
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "3 dari 5 Misi Selesai! 🌟",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0D1C2E)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Budi hampir membuka lencana \"Penjelajah Hutan Fabel\".",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF59413C)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFFCCE5FF)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Stars,
-                        contentDescription = null,
-                        tint = Color(0xFF006397),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            LinearProgressIndicator(
-                progress = { 0.6f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(RoundedCornerShape(5.dp)),
-                color = Color(0xFF006D37),
-                trackColor = Color.White
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Target: 5 Cerita",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF59413C)
-                )
-                Text(
-                    text = "60%",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF006D37)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ChildComparisonSection() {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Pantauan Anak",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0D1C2E)
-            )
-            Text(
-                text = "Semua Profil",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF006397),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Anak 1: Budi
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF6BFE9C)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Face,
-                                contentDescription = null,
-                                tint = Color(0xFF00210C),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                text = "Budi",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0D1C2E)
-                            )
-                            Text(
-                                text = "6 Tahun",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF59413C)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF0FDF4))
-                            .padding(8.dp)
-                    ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text(
-                                    text = "Skor Pemahaman",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color(0xFF00743A),
-                                    fontWeight = FontWeight.Bold
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6BFE9C),
+                                    modifier = Modifier.size(20.dp)
                                 )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "80%",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF006D37)
+                                    text = "Penyelesaian Misi Minggu Ini",
+                                    color = Color(0xFFD1FAE5),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = Color(0xFF006D37),
-                                modifier = Modifier.size(22.dp)
+                            Text(
+                                text = "Lihat semua >",
+                                color = Color(0xFF6BFE9C),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50.dp))
-                            .background(Color(0xFFE8FDF0))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            text = "Status: Mandiri",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF006D37)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                text = "${uiState.completedMissionsCount}/${uiState.totalMissionsCount} Misi",
+                                color = Color.White,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                text = "+${uiState.totalMissionPoints} Poin Bonding",
+                                color = Color(0xFFFEF08A),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        LinearProgressIndicator(
+                            progress = { uiState.missionProgressFraction },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(50.dp)),
+                            color = Color(0xFF6BFE9C),
+                            trackColor = Color.White.copy(alpha = 0.25f)
                         )
                     }
                 }
             }
 
-            // Anak 2: Adrian
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFFFDAD2)),
-                            contentAlignment = Alignment.Center
+            // 2. Children Profiles Row + Add Child Button
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Profil Anak Anda",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1E293B)
+                        )
+                        OutlinedButton(
+                            onClick = onAddChildClick,
+                            shape = RoundedCornerShape(50.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Face,
-                                contentDescription = null,
-                                tint = Color(0xFF3D0600),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                text = "Adrian",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0D1C2E)
-                            )
-                            Text(
-                                text = "4 Tahun",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF59413C)
-                            )
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Tambah Anak", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    if (uiState.children.isEmpty()) {
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Belum ada profil anak terdaftar.",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1E293B)
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Tambahkan profil anak untuk mulai memantau perkembangan literasinya.",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
+                        }
+                    } else {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            itemsIndexed(uiState.children) { index, child ->
+                                val isSelected = index == uiState.selectedChildIndex
+                                Card(
+                                    shape = RoundedCornerShape(18.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSelected) Color(0xFFFFF7ED) else Color.White
+                                    ),
+                                    modifier = Modifier
+                                        .width(175.dp)
+                                        .border(
+                                            width = if (isSelected) 2.dp else 1.dp,
+                                            color = if (isSelected) CoralOrangePrimary else Color(0xFFE2E8F0),
+                                            shape = RoundedCornerShape(18.dp)
+                                        )
+                                        .clickable { onSelectChild(index) }
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(14.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        if (child.avatarUrl.isNotBlank()) {
+                                            AsyncImage(
+                                                model = child.avatarUrl,
+                                                contentDescription = child.name,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier
+                                                    .size(52.dp)
+                                                    .clip(CircleShape)
+                                            )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(52.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFFFEF3C7)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Face,
+                                                    contentDescription = null,
+                                                    tint = CoralOrangePrimary,
+                                                    modifier = Modifier.size(28.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = child.name,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF0F172A)
+                                        )
+                                        Text(
+                                            text = child.ageRange,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF64748B)
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Button(
+                                            onClick = onSwitchToChildMode,
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = CoralOrangePrimary),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("Mulai Sesi", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
-                    Box(
+            // 3. Literacy Summary Card (Problem Solving Output)
+            if (activeChild != null) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFFFF4F0))
-                            .padding(8.dp)
+                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
+                            .clickable(onClick = onOpenMonitoring)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.AutoGraph,
+                                        contentDescription = null,
+                                        tint = CoralOrangePrimary
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Ringkasan ${activeChild.name}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                }
                                 Text(
-                                    text = "Skor Pemahaman",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color(0xFF661000),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "65%",
-                                    style = MaterialTheme.typography.headlineSmall,
+                                    text = "Lihat Monitoring >",
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = CoralOrangePrimary
                                 )
                             }
-                            Icon(
-                                imageVector = Icons.Default.Schedule,
-                                contentDescription = null,
-                                tint = CoralOrangePrimary,
-                                modifier = Modifier.size(22.dp)
-                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                StatMiniCard(
+                                    label = "Cerita Dibaca",
+                                    value = "${analysis.totalStoriesRead}",
+                                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                                    bgColor = Color(0xFFF0FDF4),
+                                    accentColor = Color(0xFF16A34A),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                StatMiniCard(
+                                    label = "Skor Kuis",
+                                    value = "${analysis.averageQuizScore}%",
+                                    icon = Icons.Default.Quiz,
+                                    bgColor = Color(0xFFEFF6FF),
+                                    accentColor = Color(0xFF2563EB),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                StatMiniCard(
+                                    label = "Literasi",
+                                    value = "${analysis.literacyPercent}%",
+                                    icon = Icons.Default.RocketLaunch,
+                                    bgColor = Color(0xFFFFF7ED),
+                                    accentColor = CoralOrangePrimary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFF8FAFC))
+                                    .padding(12.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Status Literasi: ${analysis.statusLabel}",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF006D37)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = analysis.statusFeedback,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF475569)
+                                    )
+                                }
+                            }
                         }
                     }
+                }
+            }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Box(
+            // 4. Offline Bonding Prompt Highlight
+            uiState.bondingPrompt?.let { prompt ->
+                item {
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEFCE8)),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(50.dp))
-                            .background(Color(0xFFFFDAD2))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .fillMaxWidth()
+                            .border(1.dp, Color(0xFFFDE047), RoundedCornerShape(20.dp))
+                            .clickable(onClick = onOpenMissions)
                     ) {
-                        Text(
-                            text = "Perlu Dampingan",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF8C1900)
-                        )
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Lightbulb,
+                                    contentDescription = null,
+                                    tint = Color(0xFFCA8A04)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Bahan Obrolan Hari Ini (Bonding Prompt)",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF854D0E)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = prompt.sourceStoryTitle,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = Color(0xFF0F172A)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = prompt.discussionQuestions.firstOrNull().orEmpty(),
+                                fontSize = 13.sp,
+                                color = Color(0xFF334155)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Buka semua pertanyaan diskusi",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFA16207)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = null,
+                                    tint = Color(0xFFA16207),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
+
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
 
 @Composable
-private fun LiteracyDevelopmentCard() {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF6BFE9C)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoGraph,
-                            contentDescription = null,
-                            tint = Color(0xFF00210C),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Perkembangan Budi",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0D1C2E)
-                    )
-                }
-
-                Text(
-                    text = "Minggu Ini",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF59413C)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularProgressMeter(percentage = 0.8f)
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    MetricPillItem(
-                        icon = Icons.AutoMirrored.Filled.MenuBook,
-                        iconTint = Color(0xFF006397),
-                        title = "Buku Selesai",
-                        value = "4 Cerita"
-                    )
-                    MetricPillItem(
-                        icon = Icons.Default.Quiz,
-                        iconTint = Color(0xFF006D37),
-                        title = "Kuis Tuntas",
-                        value = "3 Sesi"
-                    )
-                    MetricPillItem(
-                        icon = Icons.Default.Schedule,
-                        iconTint = CoralOrangePrimary,
-                        title = "Waktu Membaca",
-                        value = "2.5 Jam"
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CircularProgressMeter(
-    modifier: Modifier = Modifier,
-    percentage: Float = 0.8f
+private fun StatMiniCard(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    bgColor: Color,
+    accentColor: Color,
+    modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier.size(90.dp),
-        contentAlignment = Alignment.Center
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(bgColor)
+            .padding(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val strokeWidth = 8.dp.toPx()
-            val diameter = size.minDimension - strokeWidth
-            val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
-            val arcSize = Size(diameter, diameter)
-
-            // Background circle
-            drawArc(
-                color = Color(0xFFE6EEFF),
-                startAngle = -90f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-            )
-
-            // Foreground progress arc
-            drawArc(
-                color = Color(0xFF006D37),
-                startAngle = -90f,
-                sweepAngle = 360f * percentage,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-            )
-        }
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "${(percentage * 100).toInt()}%",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0D1C2E)
-            )
-            Text(
-                text = "Hebat",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF006D37)
-            )
-        }
-    }
-}
-
-@Composable
-private fun MetricPillItem(
-    icon: ImageVector,
-    iconTint: Color,
-    title: String,
-    value: String
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFEFF4FF))
-            .padding(horizontal = 10.dp, vertical = 7.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF0D1C2E)
-                )
-            }
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0D1C2E)
-            )
-        }
-    }
-}
-
-@Composable
-private fun BondingPromptCard() {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFDAD2)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(CoralOrangePrimary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lightbulb,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "INSPIRASI BONDING HARI INI",
-                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.5.sp),
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF3D0600)
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50.dp))
-                        .background(Color(0x1F3D0600))
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = "Fabel Kelinci",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF3D0600)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color.White.copy(alpha = 0.85f))
-                    .padding(12.dp)
-            ) {
-                Column {
-                    Text(
-                        text = "Tanyakan sebelum tidur:",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF59413C)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "\"Menurut Budi, kenapa kura-kura bisa menang padahal berjalannya pelan sekali?\"",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontStyle = FontStyle.Italic,
-                        color = Color(0xFF0D1C2E)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { }
-            ) {
-                Text(
-                    text = "Lihat Rekomendasi Pertanyaan Lain",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF3D0600)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = Color(0xFF3D0600),
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecentActivitiesSection() {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Riwayat Membaca Terakhir",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0D1C2E)
-            )
-            Text(
-                text = "Lihat Semua",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF006397),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Card(
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                ActivityHistoryRow(
-                    icon = Icons.Default.AutoStories,
-                    iconBg = Color(0xFFCCE5FF),
-                    iconTint = Color(0xFF006397),
-                    title = "Kelinci dan Kura-Kura Cerdik",
-                    time = "Hari ini • 15 Menit"
-                )
-
-                HorizontalDivider(
-                    color = Color(0xFFE6EEFF),
-                    thickness = 1.dp
-                )
-
-                ActivityHistoryRow(
-                    icon = Icons.Default.Pets,
-                    iconBg = Color(0xFFFFDAD2),
-                    iconTint = CoralOrangePrimary,
-                    title = "Petualangan Si Kancil di Rawa",
-                    time = "Kemarin • 20 Menit"
-                )
-
-                HorizontalDivider(
-                    color = Color(0xFFE6EEFF),
-                    thickness = 1.dp
-                )
-
-                ActivityHistoryRow(
-                    icon = Icons.Default.Forest,
-                    iconBg = Color(0xFF6BFE9C),
-                    iconTint = Color(0xFF006D37),
-                    title = "Misteri Bintang Hutan Belantara",
-                    time = "2 hari lalu • 12 Menit"
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActivityHistoryRow(
-    icon: ImageVector,
-    iconBg: Color,
-    iconTint: Color,
-    title: String,
-    time: String
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(iconBg),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = iconTint,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0D1C2E)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = time,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF59413C)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF6BFE9C)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = Color(0xFF00210C),
-                modifier = Modifier.size(16.dp)
-            )
-        }
+        Icon(icon, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF0F172A))
+        Text(label, fontSize = 11.sp, color = Color(0xFF475569))
     }
 }
 

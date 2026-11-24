@@ -33,12 +33,12 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ParentPinDialog(
+    expectedPin: String = "1234",
     onDismiss: () -> Unit,
     onSuccess: () -> Unit
 ) {
     var pinText by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val correctPin = "1234" // Default demo PIN for parent gate
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -100,10 +100,10 @@ fun ParentPinDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (pinText == correctPin) {
+                    if (pinText == expectedPin) {
                         onSuccess()
                     } else {
-                        errorMessage = "PIN salah. Coba 1234."
+                        errorMessage = "PIN salah. Silakan coba lagi."
                     }
                 },
                 enabled = pinText.length == 4,
