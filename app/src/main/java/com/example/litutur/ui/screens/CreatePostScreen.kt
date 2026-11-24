@@ -50,22 +50,34 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import com.example.litutur.data.CloudinaryHelper
+import com.example.litutur.data.FirestoreHelper
+import kotlinx.coroutines.launch
 import com.example.litutur.ui.theme.CoralOrangePrimary
 import com.example.litutur.ui.theme.LituturTheme
 import com.example.litutur.ui.theme.SecondaryBrandGreen
@@ -85,6 +97,16 @@ fun CreatePostScreen(
     onBack: () -> Unit = {},
     onPublishSuccess: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var isPublishing by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> selectedImageUri = uri }
+    )
+
     var postText by remember {
         mutableStateOf("Kayla hari ini sangat antusias membaca dongeng Singa yang Baik Hati. Senang melihatnya belajar empati sedini ini! ❤️")
     }
@@ -96,6 +118,38 @@ fun CreatePostScreen(
         MilestoneOption("2", "🔥", "Rajin Baca 7 Hari Berturut-turut", "Membiasakan waktu membaca sebelum tidur", "Streak 7 Hari", "+120 XP"),
         MilestoneOption("3", "⭐", "Juara Kuis Pemahaman", "Jawaban 5/5 sempurna kuis kosakata baru", "Pemahaman Tinggi", "+50 Poin")
     )
+
+    val publishPost: () -> Unit = {
+        if (!isPublishing && postText.isNotBlank()) {
+            isPublishing = true
+            coroutineScope.launch {
+                try {
+                    // 1. Upload to Cloudinary if photo selected
+                    val uploadedPhotoUrl = selectedImageUri?.let { uri ->
+                        CloudinaryHelper.uploadImage(uri)
+                    }
+
+                    val milestone = milestoneOptions.find { it.id == selectedBadgeId }
+
+                    // 2. Save post and photo URL to Firestore
+                    FirestoreHelper.createPost(
+                        caption = postText,
+                        imageUrl = uploadedPhotoUrl,
+                        authorName = "Orang Tua Kayla",
+                        authorTitle = "Bunda Kayla (5 thn)",
+                        milestoneTitle = milestone?.title
+                    )
+
+                    Toast.makeText(context, "Postingan berhasil dibagikan!", Toast.LENGTH_SHORT).show()
+                    onPublishSuccess()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Gagal membagikan: ${e.message}", Toast.LENGTH_LONG).show()
+                } finally {
+                    isPublishing = false
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -118,20 +172,29 @@ fun CreatePostScreen(
                 },
                 actions = {
                     Button(
-                        onClick = onPublishSuccess,
+                        onClick = publishPost,
+                        enabled = !isPublishing,
                         shape = RoundedCornerShape(50.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = CoralOrangePrimary),
                         modifier = Modifier
                             .padding(end = 12.dp)
                             .height(36.dp)
                     ) {
-                        Text(text = "Kirim", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
+                        if (isPublishing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(text = "Kirim", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F9FF))
@@ -491,6 +554,42 @@ fun CreatePostScreen(
                 }
             }
 
+            // Selected Photo Preview
+            if (selectedImageUri != null) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
+                        AsyncImage(
+                            model = selectedImageUri,
+                            contentDescription = "Foto terpilih",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        IconButton(
+                            onClick = { selectedImageUri = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(8.dp)
+                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                                .size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Hapus foto",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
             // Media Toolbar
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -509,7 +608,15 @@ fun CreatePostScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        ActionTile(icon = Icons.Default.AddPhotoAlternate, label = "Foto/Galeri")
+                        ActionTile(
+                            icon = Icons.Default.AddPhotoAlternate,
+                            label = if (selectedImageUri != null) "Foto Dipilih" else "Foto/Galeri",
+                            onClick = {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }
+                        )
                         ActionTile(icon = Icons.Default.MilitaryTech, label = "Milestone")
                         ActionTile(icon = Icons.Default.AutoStories, label = "Label Cerita")
                         ActionTile(icon = Icons.Default.Shield, label = "Privasi Anak")
@@ -578,21 +685,30 @@ fun CreatePostScreen(
 
             // Chunky Submit Button
             Button(
-                onClick = onPublishSuccess,
+                onClick = publishPost,
+                enabled = !isPublishing,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = CoralOrangePrimary),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Text(
-                    text = "Terbitkan ke Komunitas",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "🚀", fontSize = 18.sp)
+                if (isPublishing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "Terbitkan ke Komunitas",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "🚀", fontSize = 18.sp)
+                }
             }
 
             Text(
@@ -606,8 +722,15 @@ fun CreatePostScreen(
 }
 
 @Composable
-private fun ActionTile(icon: ImageVector, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun ActionTile(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit = {}
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable { onClick() }
+    ) {
         Box(
             modifier = Modifier
                 .size(44.dp)
