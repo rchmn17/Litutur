@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "123456789012",
-    "project_id": "litutur-app",
-    "storage_bucket": "litutur-app.appspot.com"
+    "project_number": "882553858230",
+    "project_id": "litutur",
+    "storage_bucket": "litutur.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef1234567890",
+        "mobilesdk_app_id": "1:882553858230:android:8d3b66c9b406bcd8f35e17",
         "android_client_info": {
           "package_name": "com.example.litutur"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "dummy_api_key_litutur"
+          "current_key": "AIzaSyCMhB9AgQfuf1wT1ihMsBLtF8WrrEvISN4"
         }
       ],
       "services": {
