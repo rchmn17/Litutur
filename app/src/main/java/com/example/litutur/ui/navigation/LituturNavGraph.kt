@@ -1,10 +1,16 @@
 package com.example.litutur.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.litutur.ui.model.LituturScreen
+import com.example.litutur.ui.parent.ParentMainScreen
 import com.example.litutur.ui.screens.*
 
 sealed class Screen(val route: String) {
@@ -101,18 +107,10 @@ fun LituturAppNavigation(
                         1 -> navController.navigate(Screen.StoryTree.route)
                     }
                 }
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import com.example.litutur.ui.model.LituturScreen
-import com.example.litutur.ui.parent.ParentMainScreen
-import com.example.litutur.ui.screens.ChildProfileSetupScreen
-import com.example.litutur.ui.screens.CreatePostScreen
-import com.example.litutur.ui.screens.LoginScreen
-import com.example.litutur.ui.screens.ParentRegistrationScreen
-import com.example.litutur.ui.screens.PostDetailScreen
-import com.example.litutur.ui.screens.SplashWelcomeScreen
+            )
+        }
+    }
+}
 
 @Composable
 fun LituturNavGraph() {

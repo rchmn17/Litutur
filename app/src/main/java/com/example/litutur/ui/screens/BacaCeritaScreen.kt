@@ -163,7 +163,7 @@ fun BacaCeritaScreen(
                     }
                 }
 
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = showRoarEffect,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut(),
@@ -292,7 +292,7 @@ fun BacaCeritaScreen(
                         color = LituturTextDark
                     )
 
-                    AnimatedVisibility(visible = showVocabTooltip) {
+                    androidx.compose.animation.AnimatedVisibility(visible = showVocabTooltip) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = LituturSurfaceHigh),
