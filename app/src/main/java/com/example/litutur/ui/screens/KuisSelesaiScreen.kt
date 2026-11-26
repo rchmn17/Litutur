@@ -22,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.litutur.data.model.StikerModel
+import com.example.litutur.data.remote.LituturAssets
 import com.example.litutur.ui.components.TactileBox
+import com.example.litutur.ui.components.rememberAssetUrl
 import com.example.litutur.ui.theme.*
 import com.example.litutur.ui.viewmodel.QuizSaveStatus
 
@@ -84,7 +86,7 @@ fun KuisSelesaiScreen(
                         .background(LituturLightPurple.copy(alpha = 0.6f))
                 )
                 AsyncImage(
-                    model = "https://lh3.googleusercontent.com/aida-public/AB6AXuBe4n2jzIROOHNosEZFY_unI3-bEkGGM1RYeJrf0VY8DWBhCGEL_e-VOkYCk9MemXubxJZFcAGES695VbeiLp1i_eY8Sz_WlpFUQH_MGY2MhwBVnYvF-1Bqaji-p3-OMAQRSd3ybEEW57chUqjG49qVqrTtpP2_OHuEbi9nFBQaYvi7ly9SRqdwuqPb5xas42-pV95RrnkkhoUZbCKpHqpJngGeo6X44Tnbztyl1RES",
+                    model = rememberAssetUrl(LituturAssets.KUIS_SELESAI_TROPHY.sourceUrl),
                     contentDescription = "Maskot & Trofi Emas",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit

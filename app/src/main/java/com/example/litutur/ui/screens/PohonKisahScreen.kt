@@ -22,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.litutur.data.repository.TreeGrowthData
+import com.example.litutur.data.remote.LituturAssets
 import com.example.litutur.ui.components.TactileBox
+import com.example.litutur.ui.components.rememberAssetUrl
 import com.example.litutur.ui.theme.*
 
 @Composable
@@ -160,7 +162,7 @@ fun PohonKisahScreen(
                     .background(LituturSurfaceHigh)
             ) {
                 AsyncImage(
-                    model = "https://lh3.googleusercontent.com/aida-public/AB6AXuAYiGzFhozN3--zZ-Nx7pGkMUBPQ8JtkE_xWv8BkeiMWXwtoZrESEQYxJY4UCjGjypxSZUguZjKBgNqPxLwFxK5t-RaP_MYxz1J82QHSyryRaiiO0_tyd6xJY403ECiaOXoqOINE1s3chVCMOvzS30j8GN7vzUF3TvsuDXH1W2DWvdgOaYaOtxojHFRVfahe0F4gOLITGiQdINQm_DqwMI837KWhd2F6kpujnmsyf1E",
+                    model = rememberAssetUrl(LituturAssets.POHON_KISAH.sourceUrl),
                     contentDescription = "Pohon Kisah",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

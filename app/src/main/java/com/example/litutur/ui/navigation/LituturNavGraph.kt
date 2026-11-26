@@ -30,6 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.litutur.data.model.ChildProfileEntity
 import com.example.litutur.data.model.ReadingLogEntity
+import com.example.litutur.data.repository.CloudinaryAssetSync
 import com.example.litutur.ui.model.LituturScreen
 import com.example.litutur.ui.parent.ParentMainScreen
 import com.example.litutur.ui.parent.ParentPinDialog
@@ -362,6 +363,23 @@ fun LituturNavGraph(
                 } else {
                     parentViewModel.loadParentDashboard(authState.parentUser, authState.children)
                     currentScreen = LituturScreen.PARENT_MAIN
+                }
+            }
+        }
+    }
+
+    // Ilustrasi & stiker: baca registry Cloudinary, lalu (jika login) unggah gambar yang belum
+    // dipindahkan. Hanya berjalan sekali per sesi; gambar yang sudah ada tidak diunggah ulang.
+    LaunchedEffect(authState.isLoggedIn) {
+        CloudinaryAssetSync.loadRegistry()
+        if (authState.isLoggedIn) {
+            CloudinaryAssetSync.syncAll().onSuccess { report ->
+                if (report.uploaded > 0 || report.failed.isNotEmpty()) {
+                    val message = buildString {
+                        append("${report.uploaded} ilustrasi/stiker dipindahkan ke Cloudinary")
+                        if (report.failed.isNotEmpty()) append(", ${report.failed.size} gagal (dicoba lagi nanti)")
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
             }
         }

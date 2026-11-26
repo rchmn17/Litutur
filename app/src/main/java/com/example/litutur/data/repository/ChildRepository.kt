@@ -13,6 +13,7 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -140,23 +141,45 @@ class ChildRepository(
      * Jika Firestore masih kosong, otomatis melakukan seeding data awal.
      */
     suspend fun getBooks(): Result<List<CeritaBukuModel>> = withContext(Dispatchers.IO) {
-        try {
+        val books = try {
             val snapshot = booksCol.get().await()
             if (snapshot.isEmpty) {
                 // Seeder otomatis jika database baru/kosong
                 seedDefaultBooks()
-                Result.success(getDefaultBooks())
+                getDefaultBooks()
             } else {
-                val books = snapshot.documents.mapNotNull { doc ->
+                snapshot.documents.mapNotNull { doc ->
                     doc.toObject(CeritaBukuModel::class.java)?.copy(id = doc.id)
-                }
-                Result.success(if (books.isEmpty()) getDefaultBooks() else books)
+                }.ifEmpty { getDefaultBooks() }
             }
         } catch (e: Exception) {
             // Fallback aman jika offline / kendala jaringan
-            Result.success(getDefaultBooks())
+            getDefaultBooks()
+        }
+        // Gambar yang sudah dipindahkan ke Cloudinary langsung memakai link Cloudinary
+        Result.success(books.map { CloudinaryAssetSync.resolveBook(it) })
+    }
+
+    /**
+     * Buku apa adanya dari SERVER Firestore (tanpa fallback & tanpa cache).
+     * Dipakai sinkronisasi aset agar tidak pernah menimpa data asli dengan data default.
+     */
+    suspend fun getBooksFromServerRaw(): Result<List<CeritaBukuModel>> = withContext(Dispatchers.IO) {
+        try {
+            val snapshot = booksCol.get(Source.SERVER).await()
+            Result.success(
+                snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(CeritaBukuModel::class.java)?.copy(id = doc.id)
+                }
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
+
+    /** ID dokumen buku di Firestore (sama dengan yang dipakai seeder) */
+    fun bookDocId(book: CeritaBukuModel): String =
+        book.id.ifBlank { book.title.lowercase().replace(" ", "_").replace("&", "dan") }
 
     /**
      * Mengambil detail buku berdasarkan judul
@@ -244,6 +267,21 @@ class ChildRepository(
         totalPoints: Int,
         maxQuizScore: Int,
         purchasedIds: Collection<String> = emptyList()
+    ): List<StikerModel> =
+        buildStickerList(storiesCount, totalPoints, maxQuizScore).map { sticker ->
+            // Gambar dari Cloudinary (registry / koleksi "stickers") jika sudah tersedia
+            val resolved = CloudinaryAssetSync.resolveSticker(sticker)
+            // Stiker yang didapat dari Kotak Stiker Misterius selalu terbuka
+            if (resolved.id in purchasedIds) resolved.copy(isUnlocked = true) else resolved
+        }
+
+    /** Katalog stiker dengan link gambar asli (dipakai sinkronisasi Cloudinary) */
+    fun stickerCatalog(): List<StikerModel> = buildStickerList(0, 0, 0)
+
+    private fun buildStickerList(
+        storiesCount: Int,
+        totalPoints: Int,
+        maxQuizScore: Int
     ): List<StikerModel> {
         val baseList = listOf(
             StikerModel(
@@ -307,9 +345,7 @@ class ChildRepository(
                 isUnlocked = storiesCount >= 5
             )
         )
-        // Stiker yang didapat dari Kotak Stiker Misterius selalu terbuka
-        if (purchasedIds.isEmpty()) return baseList
-        return baseList.map { if (it.id in purchasedIds) it.copy(isUnlocked = true) else it }
+        return baseList
     }
 
     /**
@@ -319,8 +355,7 @@ class ChildRepository(
         try {
             val defaults = getDefaultBooks()
             defaults.forEach { book ->
-                val docId = book.title.lowercase().replace(" ", "_").replace("&", "dan")
-                booksCol.document(docId).set(book).await()
+                booksCol.document(bookDocId(book)).set(book).await()
             }
         } catch (_: Exception) {
             // Abaikan error seeder jika izin terbatas

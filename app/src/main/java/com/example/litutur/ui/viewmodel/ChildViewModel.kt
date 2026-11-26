@@ -9,6 +9,7 @@ import com.example.litutur.data.model.ReadingLogEntity
 import com.example.litutur.data.model.SoalKuisModel
 import com.example.litutur.data.model.StikerModel
 import com.example.litutur.data.repository.ChildRepository
+import com.example.litutur.data.repository.CloudinaryAssetSync
 import com.example.litutur.data.repository.TreeGrowthData
 import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.Job
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -132,6 +134,23 @@ class ChildViewModel(
     private var observeJob: Job? = null
     private var boundUid: String? = null
     private var boundChildId: String? = null
+
+    init {
+        // Begitu ilustrasi/stiker selesai dipindahkan ke Cloudinary, tampilan langsung ikut berganti
+        viewModelScope.launch {
+            CloudinaryAssetSync.state.drop(1).collect { refreshAssetUrls() }
+        }
+    }
+
+    private fun refreshAssetUrls() {
+        rawBooks = rawBooks.map { CloudinaryAssetSync.resolveBook(it) }
+        _uiState.update { state ->
+            state.copy(currentBook = state.currentBook?.let { CloudinaryAssetSync.resolveBook(it) })
+        }
+        val state = _uiState.value
+        applyChildState(state.childProfile, state.readingLogs, synced = state.isRealtimeSynced)
+        resortBooks()
+    }
 
     /**
      * Menghubungkan Mode Anak ke profil anak aktif.

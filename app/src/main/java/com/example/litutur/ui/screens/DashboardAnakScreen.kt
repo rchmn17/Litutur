@@ -25,7 +25,9 @@ import coil.compose.AsyncImage
 import com.example.litutur.data.model.CeritaBukuModel
 import com.example.litutur.data.model.StikerModel
 import com.example.litutur.data.repository.TreeGrowthData
+import com.example.litutur.data.remote.LituturAssets
 import com.example.litutur.ui.components.TactileBox
+import com.example.litutur.ui.components.rememberAssetUrl
 import com.example.litutur.ui.theme.*
 
 /** Emoji hiasan untuk chip kategori (nama kategori asli tetap dari data). */
@@ -178,7 +180,7 @@ fun DashboardAnakScreen(
                     }
 
                     AsyncImage(
-                        model = "https://lh3.googleusercontent.com/aida-public/AB6AXuBlZm93mKuue9mdTbnk8VDHYRFeeAWVUDUd9aKstzHy1Q7yIa5bCaETgeRTbyT28amYwl-_U8I4Rwrzp8QFpNwAQiDWQ79HVjj2KaVj3lnBLd74r50Rq41Gi5YD4CS7aGgJyGT3azocFD8WTJY2u63rhWldFqjMNiSbuesHAUDvjEApFe-YEoy2qJJCCykVWF1wKW1mCxWNMVeZsmiqus4k04PqeZZTVCc-210SdBMY",
+                        model = rememberAssetUrl(LituturAssets.DASHBOARD_MASCOT.sourceUrl),
                         contentDescription = "Mascot Anak",
                         modifier = Modifier.size(90.dp),
                         contentScale = ContentScale.Fit
