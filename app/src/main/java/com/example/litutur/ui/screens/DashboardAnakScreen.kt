@@ -34,6 +34,7 @@ private fun categoryChipLabel(category: String): String = when (category) {
     "Petualangan" -> "🚀 Petualangan"
     "Dongeng" -> "🧚 Dongeng"
     "Sains" -> "🔬 Sains"
+    "Favoritku" -> "❤️ Favoritku"
     else -> category
 }
 
@@ -47,12 +48,24 @@ fun DashboardAnakScreen(
     isLoading: Boolean = false,
     treeGrowth: TreeGrowthData = TreeGrowthData(1, "Tunas Kecil 🌱", 0.5f, 25, "Bibit Hijau"),
     stickers: List<StikerModel> = emptyList(),
+    dailyMissionProgress: Int = 0,
+    dailyMissionTarget: Int = 2,
+    dailyMissionReward: Int = 20,
+    isDailyMissionClaimed: Boolean = false,
+    onClaimDailyMission: () -> Unit = {},
     onCategorySelected: (Int) -> Unit = {},
     onRequestParentMode: () -> Unit = {},
     onNavigateToRead: (String) -> Unit = {},
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
     val unlockedStickers = stickers.count { it.isUnlocked }
+    val missionDone = dailyMissionProgress.coerceAtMost(dailyMissionTarget)
+    val missionClaimable = !isDailyMissionClaimed && dailyMissionProgress >= dailyMissionTarget
+    val missionSubtitle = when {
+        isDailyMissionClaimed -> "Misi selesai! Hebat sekali 🎉"
+        missionClaimable -> "Misi tercapai! Ketuk untuk klaim hadiah 🎁"
+        else -> "Baca ${dailyMissionTarget - dailyMissionProgress} cerita lagi yuk! ($missionDone/$dailyMissionTarget)"
+    }
 
     Scaffold(
         topBar = {
@@ -235,8 +248,9 @@ fun DashboardAnakScreen(
 
             TactileBox(
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = Color.White,
-                shadowColor = LituturSurfaceVariant
+                backgroundColor = if (missionClaimable) LituturSecondaryContainer else Color.White,
+                shadowColor = if (missionClaimable) LituturSecondaryDim else LituturSurfaceVariant,
+                onClick = onClaimDailyMission
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
@@ -256,25 +270,39 @@ fun DashboardAnakScreen(
                             }
                             Column {
                                 Text("Misi Hari Ini", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                                Text("Baca 1 cerita lagi yuk!", fontSize = 12.sp, color = LituturTextVariant)
+                                Text(missionSubtitle, fontSize = 12.sp, color = LituturTextVariant)
                             }
                         }
 
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
-                                .background(LituturSecondaryContainer)
+                                .background(if (missionClaimable) Color.White else LituturSecondaryContainer)
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(14.dp))
+                            Icon(
+                                if (isDailyMissionClaimed) Icons.Default.CheckCircle else Icons.Default.MonetizationOn,
+                                contentDescription = null,
+                                tint = LituturSecondary,
+                                modifier = Modifier.size(14.dp)
+                            )
                             Spacer(modifier = Modifier.width(2.dp))
-                            Text("+20 Poin", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturSecondary)
+                            Text(
+                                when {
+                                    isDailyMissionClaimed -> "Diklaim"
+                                    missionClaimable -> "Klaim +$dailyMissionReward"
+                                    else -> "+$dailyMissionReward Poin"
+                                },
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LituturSecondary
+                            )
                         }
                     }
 
                     LinearProgressIndicator(
-                        progress = { 0.5f },
+                        progress = { missionDone.toFloat() / dailyMissionTarget.coerceAtLeast(1).toFloat() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)

@@ -31,11 +31,13 @@ fun PohonKisahScreen(
     childPoints: Int = 135,
     storiesCount: Int = 0,
     treeGrowth: TreeGrowthData = TreeGrowthData(1, "Tunas Kecil 🌱", 0.5f, 25, "Bibit Hijau"),
+    isWateredToday: Boolean = false,
+    waterRewardPoints: Int = 5,
+    onWaterTree: () -> Unit = {},
     onRequestParentMode: () -> Unit = {},
     onNavigateToAlbum: () -> Unit = {},
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
-    var isWateredToday by remember { mutableStateOf(false) }
     val isMaxStage = treeGrowth.pointsToNext <= 0
 
     Scaffold(
@@ -239,7 +241,7 @@ fun PohonKisahScreen(
                         backgroundColor = if (isWateredToday) LituturSecondary else LituturPurple,
                         shadowColor = if (isWateredToday) LituturSecondaryDim else LituturPurpleDark,
                         cornerRadius = 14.dp,
-                        onClick = { isWateredToday = true }
+                        onClick = onWaterTree
                     ) {
                         Row(
                             modifier = Modifier
@@ -251,7 +253,7 @@ fun PohonKisahScreen(
                             Icon(Icons.Default.Shower, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                if (isWateredToday) "Sudah Disiram Hari Ini 🌸" else "Siram Pohon 💧",
+                                if (isWateredToday) "Sudah Disiram Hari Ini 🌸" else "Siram Pohon 💧 (+$waterRewardPoints Poin)",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White

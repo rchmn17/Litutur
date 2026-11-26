@@ -3,11 +3,20 @@ package com.example.litutur.data.repository
 import com.example.litutur.data.model.CeritaBukuModel
 import com.example.litutur.data.model.ChapterModel
 import com.example.litutur.data.model.ChildProfileEntity
+import com.example.litutur.data.model.HasilKuisModel
 import com.example.litutur.data.model.OpsiKuisModel
+import com.example.litutur.data.model.ReadingLogEntity
 import com.example.litutur.data.model.SoalKuisModel
 import com.example.litutur.data.model.StikerModel
+import android.util.Log
+import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
@@ -17,11 +26,114 @@ import kotlinx.coroutines.withContext
  * 2. Algoritma sorting buku berdasarkan minat baca anak (Flowchart 2.2.1)
  * 3. Algoritma gamifikasi pertumbuhan Pohon Kisah (Fungsi 3)
  * 4. Algoritma evaluasi pembukaan kunci Album Stiker (Fungsi 5)
+ * 5. Sinkronisasi real-time profil & riwayat baca anak + penyimpanan hasil kuis
  */
 class ChildRepository(
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
     private val booksCol = firestore.collection("books")
+    private val usersCol = firestore.collection("users")
+
+    private fun childRef(uid: String, childId: String) =
+        usersCol.document(uid).collection("children").document(childId)
+
+    /**
+     * Listener real-time dokumen profil anak (users/{uid}/children/{childId}).
+     * Berkat latency compensation Firestore, perubahan poin dari kuis langsung terpancar
+     * ke UI bahkan sebelum server mengonfirmasi (dan tetap jalan saat offline).
+     */
+    fun observeChildProfile(uid: String, childId: String): Flow<ChildProfileEntity?> = callbackFlow {
+        val registration = childRef(uid, childId).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.w(TAG, "observeChildProfile gagal", error)
+                return@addSnapshotListener // pertahankan nilai terakhir
+            }
+            val child = if (snapshot != null && snapshot.exists()) {
+                snapshot.toObject(ChildProfileEntity::class.java)?.copy(id = snapshot.id)
+            } else {
+                null
+            }
+            trySend(child)
+        }
+        awaitClose { registration.remove() }
+    }
+
+    /**
+     * Listener real-time riwayat baca anak, urut terbaru lebih dulu.
+     * Dipakai untuk menghitung jumlah cerita selesai & skor kuis tertinggi (syarat stiker).
+     */
+    fun observeReadingLogs(uid: String, childId: String): Flow<List<ReadingLogEntity>> = callbackFlow {
+        val registration = childRef(uid, childId)
+            .collection("reading_logs")
+            .orderBy("completedAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.w(TAG, "observeReadingLogs gagal", error)
+                    return@addSnapshotListener
+                }
+                val logs = snapshot?.documents?.mapNotNull { doc ->
+                    doc.toObject(ReadingLogEntity::class.java)?.copy(id = doc.id)
+                }.orEmpty()
+                trySend(logs)
+            }
+        awaitClose { registration.remove() }
+    }
+
+    /**
+     * Menyimpan hasil kuis anak secara atomik dalam satu WriteBatch:
+     * 1. reading_logs/{id}  -> riwayat baca (dibaca Mode Orang Tua & syarat stiker)
+     * 2. quiz_results/{id}  -> detail skor kuis
+     * 3. dokumen anak       -> points += XP, minutesUsedToday += durasi,
+     *                          interestScores[kategori] += 1 (bahan sorting minat)
+     *
+     * Catatan: commit() baru selesai setelah server mengonfirmasi. Saat offline perubahan
+     * sudah tercatat di cache lokal dan listener sudah memancarkannya ke UI.
+     */
+    suspend fun saveQuizCompletion(
+        uid: String,
+        childId: String,
+        log: ReadingLogEntity,
+        result: HasilKuisModel,
+        category: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val ref = childRef(uid, childId)
+            val batch = firestore.batch()
+            batch.set(ref.collection("reading_logs").document(log.id), log)
+            batch.set(ref.collection("quiz_results").document(log.id), result)
+            batch.update(
+                ref,
+                FieldPath.of("points"), FieldValue.increment(result.xpAwarded.toLong()),
+                FieldPath.of("minutesUsedToday"), FieldValue.increment(log.durationMinutes.toLong()),
+                // FieldPath.of aman untuk nama kategori yang mengandung spasi / '&' / '.'
+                FieldPath.of("interestScores", category.ifBlank { "Lainnya" }), FieldValue.increment(1L)
+            )
+            batch.commit().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "saveQuizCompletion gagal", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Memperbarui sebagian field dokumen anak (siram pohon, klaim misi, favorit, kotak stiker).
+     * Memakai update() biasa (bukan transaksi) agar tetap bekerja saat offline:
+     * perubahan langsung masuk cache lokal & listener, lalu tersinkron saat online.
+     */
+    suspend fun updateChildFields(
+        uid: String,
+        childId: String,
+        updates: Map<String, Any>
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            childRef(uid, childId).update(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "updateChildFields gagal: ${updates.keys}", e)
+            Result.failure(e)
+        }
+    }
 
     /**
      * Mengambil seluruh buku dari Firestore.
@@ -130,7 +242,8 @@ class ChildRepository(
     fun evaluateStickersUnlock(
         storiesCount: Int,
         totalPoints: Int,
-        maxQuizScore: Int
+        maxQuizScore: Int,
+        purchasedIds: Collection<String> = emptyList()
     ): List<StikerModel> {
         val baseList = listOf(
             StikerModel(
@@ -194,7 +307,9 @@ class ChildRepository(
                 isUnlocked = storiesCount >= 5
             )
         )
-        return baseList
+        // Stiker yang didapat dari Kotak Stiker Misterius selalu terbuka
+        if (purchasedIds.isEmpty()) return baseList
+        return baseList.map { if (it.id in purchasedIds) it.copy(isUnlocked = true) else it }
     }
 
     /**
@@ -382,6 +497,8 @@ class ChildRepository(
         )
     }
 }
+
+private const val TAG = "ChildRepository"
 
 /**
  * Data Model Hasil Kalkulasi Pohon Kisah Gamifikasi

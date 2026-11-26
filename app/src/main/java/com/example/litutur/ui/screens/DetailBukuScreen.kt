@@ -30,10 +30,11 @@ import com.example.litutur.ui.theme.*
 fun DetailBukuScreen(
     bookTitle: String = "Singa yang Baik Hati",
     book: CeritaBukuModel? = null,
+    isFavorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onStartReading: () -> Unit = {}
 ) {
-    var isFavorite by remember { mutableStateOf(false) }
     var selectedMode by remember { mutableStateOf("narrated") }
 
     // Buku belum selesai dimuat: tampilkan loading
@@ -153,7 +154,7 @@ fun DetailBukuScreen(
                     }
 
                     IconButton(
-                        onClick = { isFavorite = !isFavorite },
+                        onClick = onToggleFavorite,
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)

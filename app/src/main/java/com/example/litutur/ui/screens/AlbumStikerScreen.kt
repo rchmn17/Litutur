@@ -36,6 +36,11 @@ fun AlbumStikerScreen(
     childPoints: Int = 135,
     storiesCount: Int = 0,
     stickers: List<StikerModel> = emptyList(),
+    coins: Int = childPoints,
+    mysteryBoxCost: Int = 25,
+    revealedSticker: StikerModel? = null,
+    onOpenMysteryBox: () -> Unit = {},
+    onDismissReveal: () -> Unit = {},
     onRequestParentMode: () -> Unit = {},
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
@@ -54,6 +59,12 @@ fun AlbumStikerScreen(
     }
 
     val unlockedCount = stickers.count { it.isUnlocked }
+    val hasLockedSticker = stickers.any { !it.isUnlocked }
+    val canOpenBox = hasLockedSticker && coins >= mysteryBoxCost
+
+    if (revealedSticker != null) {
+        MysteryBoxRevealDialog(sticker = revealedSticker, onDismiss = onDismissReveal)
+    }
     val unlockedProgress = unlockedCount.toFloat() / stickers.size.coerceAtLeast(1).toFloat()
 
     Scaffold(
@@ -85,7 +96,7 @@ fun AlbumStikerScreen(
                         ) {
                             Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("$childPoints Koin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Text("$coins Koin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                         }
                         IconButton(
                             onClick = onRequestParentMode,
@@ -245,12 +256,11 @@ fun AlbumStikerScreen(
 
             TactileBox(
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = LituturPrimary,
-                shadowColor = LituturPrimaryShadow,
+                backgroundColor = if (canOpenBox) LituturPrimary else LituturOutline,
+                shadowColor = if (canOpenBox) LituturPrimaryShadow else LituturSurfaceVariant,
                 cornerRadius = 14.dp,
-                onClick = {
-                    Toast.makeText(context, "Membuka Kotak Stiker Misterius... ✨", Toast.LENGTH_SHORT).show()
-                }
+                // Tetap bisa ditekan saat koin kurang agar anak mendapat penjelasan (Toast)
+                onClick = onOpenMysteryBox
             ) {
                 Row(
                     modifier = Modifier
@@ -261,9 +271,62 @@ fun AlbumStikerScreen(
                 ) {
                     Icon(Icons.Default.Redeem, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Buka Kotak Stiker Misterius (-25 Koin)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        when {
+                            !hasLockedSticker -> "Semua Stiker Terkumpul! 🏆"
+                            canOpenBox -> "Buka Kotak Stiker Misterius (-$mysteryBoxCost Koin)"
+                            else -> "Kotak Misterius: butuh ${mysteryBoxCost - coins} koin lagi"
+                        },
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun MysteryBoxRevealDialog(sticker: StikerModel, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Hore! Simpan ke Album", fontWeight = FontWeight.Bold, color = LituturPrimary)
+            }
+        },
+        title = {
+            Text("Kotak Misterius Terbuka! ✨", fontWeight = FontWeight.Bold, color = LituturTextDark)
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(110.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(LituturSurfaceHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (sticker.imageUrl.isBlank()) {
+                        Icon(Icons.Default.Pets, contentDescription = sticker.name, tint = LituturPrimaryContainer, modifier = Modifier.size(56.dp))
+                    } else {
+                        AsyncImage(
+                            model = sticker.imageUrl,
+                            contentDescription = sticker.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+                Text(sticker.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                Text(sticker.category, fontSize = 12.sp, color = LituturTextVariant)
+                Text(sticker.soundText, fontSize = 13.sp, color = LituturTextDark)
+            }
+        }
+    )
 }

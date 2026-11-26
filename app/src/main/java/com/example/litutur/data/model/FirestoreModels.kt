@@ -23,6 +23,12 @@ data class ChildProfileEntity(
     val minutesUsedToday: Int = 0,
     val points: Int = 0,
     val statusLevel: String = "Pemula Ceria",
+    // Gamifikasi Mode Anak (disimpan di dokumen anak)
+    val lastWateredDate: String = "",            // "yyyy-MM-dd" terakhir pohon disiram
+    val lastMissionClaimDate: String = "",       // "yyyy-MM-dd" terakhir hadiah Misi Hari Ini diklaim
+    val favoriteBookIds: List<String> = emptyList(),
+    val purchasedStickerIds: List<String> = emptyList(), // stiker dari Kotak Stiker Misterius
+    val coinsSpent: Int = 0,                     // koin terpakai; saldo koin = points - coinsSpent
     val createdAt: Long = System.currentTimeMillis()
 )
 

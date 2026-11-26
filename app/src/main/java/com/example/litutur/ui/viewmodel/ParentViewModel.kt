@@ -298,9 +298,83 @@ class ParentViewModel(
     }
 
     /**
-     * Integrasi Mode Anak -> Firestore -> Mode Orang Tua:
-     * Dipanggil saat anak menyelesaikan kuis setelah membaca cerita.
+     * Integrasi Mode Anak -> Mode Orang Tua.
+     * Penyimpanan ke Firestore sudah dilakukan ChildViewModel (reading_logs, quiz_results, poin),
+     * fungsi ini hanya menyelaraskan state lokal Mode Orang Tua (poin anak, riwayat, analisis)
+     * agar langsung akurat saat kembali ke Mode Orang Tua — TANPA menulis ulang ke Firestore.
      */
+    fun applyChildQuizResult(log: ReadingLogEntity, pointsEarned: Int) {
+        val child = _uiState.value.selectedChild
+
+        _uiState.update {
+            it.copy(
+                lastCompletedStoryTitle = log.storyTitle,
+                lastQuizScore = log.quizScore,
+                lastEarnedPoints = pointsEarned
+            )
+        }
+        if (child == null) return
+
+        val category = log.category.ifBlank { "Lainnya" }
+        val updatedChild = child.copy(
+            points = child.points + pointsEarned,
+            minutesUsedToday = child.minutesUsedToday + log.durationMinutes,
+            interestScores = child.interestScores + (category to ((child.interestScores[category] ?: 0) + 1))
+        )
+        val updatedChildren = _uiState.value.children.map { if (it.id == child.id) updatedChild else it }
+        val updatedLogs = listOf(log) + _uiState.value.readingLogs.filterNot { it.id == log.id }
+        val analysis = computeLiteracyAnalysis(updatedChild, updatedLogs)
+        val bonding = generateBondingPrompt(updatedChild, updatedLogs)
+        val milestones = generateAutoMilestones(updatedChild, analysis, _uiState.value.missions)
+
+        _uiState.update {
+            it.copy(
+                children = updatedChildren,
+                readingLogs = updatedLogs,
+                literacyAnalysis = analysis,
+                bondingPrompt = bonding,
+                autoMilestones = milestones
+            )
+        }
+    }
+
+    /**
+     * Dipanggil saat kembali dari Mode Anak (setelah PIN): menyalin profil & riwayat terbaru
+     * dari ChildViewModel (poin, siram pohon, misi, favorit, stiker) ke state Mode Orang Tua.
+     * Data sudah tersimpan di Firestore oleh ChildViewModel, jadi tidak ada penulisan di sini.
+     */
+    fun syncChildProgress(child: ChildProfileEntity, logs: List<ReadingLogEntity>) {
+        val state = _uiState.value
+        if (state.children.none { it.id == child.id }) return
+
+        val updatedChildren = state.children.map { if (it.id == child.id) child else it }
+        val isSelected = state.selectedChild?.id == child.id
+        // Riwayat hanya ditimpa jika anak ini yang sedang dipilih & data riwayat tersedia
+        val updatedLogs = if (isSelected && logs.isNotEmpty()) logs else state.readingLogs
+        val analysis = if (isSelected) computeLiteracyAnalysis(child, updatedLogs) else state.literacyAnalysis
+        val bonding = if (isSelected) generateBondingPrompt(child, updatedLogs) else state.bondingPrompt
+        val milestones = if (isSelected) generateAutoMilestones(child, analysis, state.missions) else state.autoMilestones
+
+        _uiState.update {
+            it.copy(
+                children = updatedChildren,
+                readingLogs = updatedLogs,
+                literacyAnalysis = analysis,
+                bondingPrompt = bonding,
+                autoMilestones = milestones
+            )
+        }
+    }
+
+    /**
+     * Versi lama integrasi Mode Anak. Menulis reading log & poin sendiri ke Firestore,
+     * sehingga jika dipakai bersama ChildViewModel XP akan tercatat dua kali.
+     */
+    @Deprecated(
+        "Hasil kuis kini disimpan oleh ChildViewModel.submitAnswerAndProceed(). " +
+            "Gunakan applyChildQuizResult() untuk menyelaraskan state Mode Orang Tua.",
+        ReplaceWith("applyChildQuizResult(log, pointsEarned)")
+    )
     fun completeChildReadingAndQuiz(
         storyTitle: String,
         quizScore: Int,
