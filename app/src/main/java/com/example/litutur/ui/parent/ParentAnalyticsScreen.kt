@@ -113,7 +113,13 @@ fun ParentAnalyticsScreen(
                             FilterChip(
                                 selected = idx == uiState.selectedChildIndex,
                                 onClick = { onSelectChild(idx) },
-                                label = { Text("${child.name} (${child.ageRange})") }
+                                label = {
+                                    Text(
+                                        text = "${child.name} (${child.ageRange})",
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
                             )
                         }
                     }
@@ -188,60 +194,89 @@ fun ParentAnalyticsScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Icon(Icons.Default.BarChart, contentDescription = null, tint = CoralOrangePrimary)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "Aktivitas Membaca Mingguan",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 15.sp,
-                                    color = Color(0xFF0F172A)
+                                    color = Color(0xFF0F172A),
+                                    maxLines = 1
                                 )
                             }
-                            Text(
-                                text = "${analysis.totalStoriesRead} cerita • ${analysis.totalDurationMinutes} mnt",
-                                fontSize = 12.sp,
-                                color = Color(0xFF64748B)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50.dp))
+                                    .background(Color(0xFFF1F5F9))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "${analysis.totalStoriesRead} cerita • ${analysis.totalDurationMinutes} mnt",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF475569),
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(18.dp))
 
                         val maxCount = (analysis.dailyCounts.maxOrNull() ?: 1).coerceAtLeast(1)
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(130.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.Bottom
                         ) {
                             analysis.dailyCounts.forEachIndexed { idx, count ->
-                                val barFraction = if (count == 0) 0.08f else (count.toFloat() / maxCount.toFloat()).coerceIn(0.15f, 1f)
+                                val barFraction = if (count == 0) 0.08f else (count.toFloat() / maxCount.toFloat()).coerceIn(0.18f, 1f)
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Bottom,
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text(
-                                        text = if (count > 0) "$count" else "",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = CoralOrangePrimary
-                                    )
+                                    Box(
+                                        modifier = Modifier.height(18.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (count > 0) {
+                                            Text(
+                                                text = "$count",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = CoralOrangePrimary,
+                                                maxLines = 1
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Box(
                                         modifier = Modifier
-                                            .width(24.dp)
-                                            .height((90 * barFraction).dp)
-                                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                                            .background(if (count > 0) CoralOrangePrimary else Color(0xFFE2E8F0))
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                            .fillMaxWidth()
+                                            .height(88.dp),
+                                        contentAlignment = Alignment.BottomCenter
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .width(24.dp)
+                                                .height((88 * barFraction).dp)
+                                                .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                                                .background(if (count > 0) CoralOrangePrimary else Color(0xFFE2E8F0))
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = dayLabels.getOrElse(idx) { "" },
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF475569)
+                                        color = if (count > 0) CoralOrangePrimary else Color(0xFF475569),
+                                        maxLines = 1
                                     )
                                 }
                             }

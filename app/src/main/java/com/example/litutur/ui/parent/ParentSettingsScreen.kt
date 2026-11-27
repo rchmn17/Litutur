@@ -3,6 +3,8 @@ package com.example.litutur.ui.parent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -255,12 +257,23 @@ fun ParentSettingsScreen(
                                 color = Color(0xFF64748B)
                             )
                             Spacer(modifier = Modifier.height(10.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf(30, 45, 60, 90).forEach { mins ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(15, 30, 45, 60, 90, 120).forEach { mins ->
                                     FilterChip(
                                         selected = activeChild.dailyLimitMinutes == mins,
                                         onClick = { onUpdateDailyLimit(mins) },
-                                        label = { Text("$mins mnt") }
+                                        label = {
+                                            Text(
+                                                text = "$mins mnt",
+                                                maxLines = 1,
+                                                softWrap = false
+                                            )
+                                        }
                                     )
                                 }
                             }

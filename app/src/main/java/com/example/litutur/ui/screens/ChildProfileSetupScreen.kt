@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -272,7 +274,9 @@ fun ChildProfileSetupScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         avatars.forEach { (shortName, fullName) ->
@@ -288,7 +292,7 @@ fun ChildProfileSetupScreen(
                                     brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFE2E8F0))
                                 ),
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .widthIn(min = 76.dp)
                                     .clickable { selectedAvatar = fullName }
                             ) {
                                 Column(
@@ -464,14 +468,16 @@ fun ChildProfileSetupScreen(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         ageRanges.forEach { (ageLabel, emoji) ->
                             val isSelected = selectedAgeRange == ageLabel
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .widthIn(min = 76.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(if (isSelected) Color(0xFF7C3AED) else Color(0xFFF8FAFC))
                                     .border(
@@ -480,7 +486,7 @@ fun ChildProfileSetupScreen(
                                         RoundedCornerShape(12.dp)
                                     )
                                     .clickable { selectedAgeRange = ageLabel }
-                                    .padding(vertical = 8.dp),
+                                    .padding(vertical = 8.dp, horizontal = 12.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -489,7 +495,9 @@ fun ChildProfileSetupScreen(
                                         text = ageLabel,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (isSelected) Color.White else Color(0xFF475569)
+                                        color = if (isSelected) Color.White else Color(0xFF475569),
+                                        maxLines = 1,
+                                        softWrap = false
                                     )
                                 }
                             }

@@ -148,7 +148,13 @@ fun ParentCommunityScreen(
                         FilterChip(
                             selected = selectedFilter == filter,
                             onClick = { selectedFilter = filter },
-                            label = { Text(filter) }
+                            label = {
+                                Text(
+                                    text = filter,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         )
                     }
                 }

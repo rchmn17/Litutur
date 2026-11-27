@@ -105,7 +105,13 @@ fun ParentMissionsScreen(
                             FilterChip(
                                 selected = idx == uiState.selectedChildIndex,
                                 onClick = { onSelectChild(idx) },
-                                label = { Text("Anak: ${child.name}") }
+                                label = {
+                                    Text(
+                                        text = "Anak: ${child.name}",
+                                        maxLines = 1,
+                                        softWrap = false
+                                    )
+                                }
                             )
                         }
                     }
