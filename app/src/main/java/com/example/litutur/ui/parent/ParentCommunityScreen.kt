@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.litutur.data.model.CommunityPostEntity
+import com.example.litutur.ui.components.ParentTopBar
 import com.example.litutur.ui.theme.CoralOrangePrimary
 import com.example.litutur.ui.theme.LituturTheme
 import com.example.litutur.ui.theme.SecondaryBrandGreen
@@ -95,49 +96,11 @@ fun ParentCommunityScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF6BFE9C)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FamilyRestroom,
-                                contentDescription = null,
-                                tint = Color(0xFF005228)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "LITUTUR PARENT",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = SecondaryBrandGreen,
-                                letterSpacing = 0.5.sp
-                            )
-                            Text(
-                                text = "Komunitas Orang Tua",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0D1C2E)
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onRefresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Muat ulang", tint = CoralOrangePrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F9FF))
-            )
+            ParentTopBar(title = "Komunitas Orang Tua") {
+                IconButton(onClick = onRefresh) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Muat ulang", tint = CoralOrangePrimary)
+                }
+            }
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -149,7 +112,7 @@ fun ParentCommunityScreen(
                 text = { Text("Bagikan Milestone", fontWeight = FontWeight.Bold) }
             )
         },
-        containerColor = Color(0xFFF8F9FF)
+        containerColor = Color(0xFFF8F9FD)
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier

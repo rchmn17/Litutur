@@ -28,14 +28,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.litutur.data.model.StikerModel
+import com.example.litutur.ui.components.ChildBottomBar
+import com.example.litutur.ui.components.ChildHomeTopBar
+import com.example.litutur.ui.components.ChildTab
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.theme.*
 import java.util.Locale
 
 @Composable
 fun AlbumStikerScreen(
-    childName: String = "Budi",
-    childPoints: Int = 135,
+    childName: String = "Sahabat Kecil",
+    childPoints: Int = 0,
     storiesCount: Int = 0,
     stickers: List<StikerModel> = emptyList(),
     coins: Int = childPoints,
@@ -101,101 +104,16 @@ fun AlbumStikerScreen(
 
     Scaffold(
         topBar = {
-            Surface(color = LituturSurface.copy(alpha = 0.95f), shadowElevation = 2.dp) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp)
-                    ) {
-                        Text(
-                            "Koleksi Stiker $childName ⭐",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = LituturTextDark,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            "Selesaikan bacaan & kuis untuk membuka stiker!",
-                            fontSize = 11.sp,
-                            color = LituturOutline,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = LituturSurfaceHigh
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.MonetizationOn,
-                                    contentDescription = null,
-                                    tint = LituturSecondary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    "$coins Koin",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = LituturTextDark,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
-                        IconButton(
-                            onClick = onRequestParentMode,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(LituturSurfaceVariant)
-                        ) {
-                            Icon(Icons.Filled.Lock, contentDescription = "Kunci Orang Tua", tint = LituturTextVariant)
-                        }
-                    }
-                }
-            }
+            ChildHomeTopBar(
+                title = "Koleksi Stiker $childName",
+                coins = coins,
+                onRequestParentMode = onRequestParentMode,
+                label = "ALBUM STIKER",
+                icon = Icons.Default.Stars
+            )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { onBottomTabSelected(0) },
-                    icon = { Icon(Icons.Default.AutoStories, null) },
-                    label = { Text("Beranda") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { onBottomTabSelected(1) },
-                    icon = { Icon(Icons.Default.Park, null) },
-                    label = { Text("Pohon Kisah") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Stars, null) },
-                    label = { Text("Album", fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, indicatorColor = LituturPurple)
-                )
-            }
+            ChildBottomBar(selected = ChildTab.ALBUM, onTabSelected = onBottomTabSelected)
         }
     ) { innerPadding ->
         Column(

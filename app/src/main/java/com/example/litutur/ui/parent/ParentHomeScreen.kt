@@ -60,6 +60,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.litutur.ui.components.ParentTopBar
 import com.example.litutur.ui.theme.CoralOrangePrimary
 import com.example.litutur.ui.theme.LituturTheme
 import com.example.litutur.ui.viewmodel.ParentUiState
@@ -80,59 +81,23 @@ fun ParentHomeScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF6BFE9C)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FamilyRestroom,
-                                contentDescription = null,
-                                tint = Color(0xFF00210C),
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = "LITUTUR PARENT",
-                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF006D37)
-                            )
-                            Text(
-                                text = "Halo, $parentName",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1E293B)
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    Button(
-                        onClick = onSwitchToChildMode,
-                        shape = RoundedCornerShape(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = CoralOrangePrimary),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        modifier = Modifier.padding(end = 12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ChildCare,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Mode Anak", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F9FD))
-            )
+            ParentTopBar(title = "Halo, $parentName") {
+                Button(
+                    onClick = onSwitchToChildMode,
+                    shape = RoundedCornerShape(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = CoralOrangePrimary),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(end = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ChildCare,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Mode Anak", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         },
         containerColor = Color(0xFFF8F9FD)
     ) { innerPadding ->
@@ -336,7 +301,11 @@ fun ParentHomeScreen(
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Button(
-                                            onClick = onSwitchToChildMode,
+                                            onClick = {
+                                                // Pastikan sesi dimulai untuk anak yang kartunya ditekan
+                                                onSelectChild(index)
+                                                onSwitchToChildMode()
+                                            },
                                             shape = RoundedCornerShape(10.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = CoralOrangePrimary),
                                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),

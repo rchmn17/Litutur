@@ -103,7 +103,7 @@ fun ParentRegistrationScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Child Story Reader",
+                        text = "LITUTUR • Daftar Orang Tua",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         color = Color(0xFF0F172A)

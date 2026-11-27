@@ -124,7 +124,7 @@ fun ChildProfileSetupScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Child Story Reader",
+                        text = "LITUTUR • Profil Anak",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         color = Color(0xFF0F172A)

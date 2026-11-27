@@ -26,6 +26,9 @@ import com.example.litutur.data.model.CeritaBukuModel
 import com.example.litutur.data.model.StikerModel
 import com.example.litutur.data.repository.TreeGrowthData
 import com.example.litutur.data.remote.LituturAssets
+import com.example.litutur.ui.components.ChildBottomBar
+import com.example.litutur.ui.components.ChildHomeTopBar
+import com.example.litutur.ui.components.ChildTab
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.components.rememberAssetUrl
 import com.example.litutur.ui.theme.*
@@ -42,8 +45,8 @@ private fun categoryChipLabel(category: String): String = when (category) {
 
 @Composable
 fun DashboardAnakScreen(
-    childName: String = "Budi",
-    childPoints: Int = 120,
+    childName: String = "Sahabat Kecil",
+    childPoints: Int = 0,
     books: List<CeritaBukuModel> = emptyList(),
     categories: List<String> = listOf("Semua Cerita"),
     selectedCategoryIndex: Int = 0,
@@ -71,93 +74,14 @@ fun DashboardAnakScreen(
 
     Scaffold(
         topBar = {
-            Surface(color = LituturSurface.copy(alpha = 0.95f), shadowElevation = 2.dp) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .padding(end = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(LituturPrimaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Filled.Face, contentDescription = null, tint = Color.White)
-                        }
-                        Column {
-                            Text("LITUTUR ANAK", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturOutline)
-                            Text(
-                                "Halo, $childName! 🌟",
-                                fontSize = 17.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = LituturTextDark,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = LituturSurfaceHigh
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
-                                Text(
-                                    "$childPoints Poin",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = LituturTextDark,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
-                        IconButton(
-                            onClick = onRequestParentMode,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(LituturSurfaceVariant)
-                        ) {
-                            Icon(Icons.Filled.Lock, contentDescription = "Kunci Orang Tua", tint = LituturTextVariant)
-                        }
-                    }
-                }
-            }
+            ChildHomeTopBar(
+                title = "Halo, $childName! 🌟",
+                coins = childPoints,
+                onRequestParentMode = onRequestParentMode
+            )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { onBottomTabSelected(0) },
-                    icon = { Icon(Icons.Default.AutoStories, null) },
-                    label = { Text("Beranda", fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, indicatorColor = LituturPurple)
-                )
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(1) }, icon = { Icon(Icons.Default.Park, null) }, label = { Text("Pohon Kisah") })
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(2) }, icon = { Icon(Icons.Default.Stars, null) }, label = { Text("Album") })
-            }
+            ChildBottomBar(selected = ChildTab.HOME, onTabSelected = onBottomTabSelected)
         }
     ) { innerPadding ->
         Column(

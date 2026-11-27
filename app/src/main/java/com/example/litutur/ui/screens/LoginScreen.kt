@@ -101,7 +101,7 @@ fun LoginScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Child Story Reader",
+                            text = "LITUTUR • Masuk Akun",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = Color(0xFF1E293B)

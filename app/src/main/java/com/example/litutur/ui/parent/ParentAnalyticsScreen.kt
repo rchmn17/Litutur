@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.litutur.ui.components.ParentTopBar
 import com.example.litutur.ui.theme.CoralOrangePrimary
 import com.example.litutur.ui.theme.LituturTheme
 import com.example.litutur.ui.viewmodel.ParentUiState
@@ -87,49 +88,13 @@ fun ParentAnalyticsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF6BFE9C)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FamilyRestroom,
-                                contentDescription = null,
-                                tint = Color(0xFF00210C),
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = "LITUTUR PARENT",
-                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.sp),
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF006D37)
-                            )
-                            Text(
-                                text = "Monitoring Literasi",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1E293B)
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    TextButton(onClick = { showAddLogDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = CoralOrangePrimary, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Catat Baca", color = CoralOrangePrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F9FD))
-            )
+            ParentTopBar(title = "Monitoring Literasi") {
+                TextButton(onClick = { showAddLogDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = null, tint = CoralOrangePrimary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Catat Baca", color = CoralOrangePrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+            }
         },
         containerColor = Color(0xFFF8F9FD)
     ) { innerPadding ->

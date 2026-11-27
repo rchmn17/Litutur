@@ -32,6 +32,9 @@ import coil.compose.AsyncImage
 import com.example.litutur.data.model.StikerModel
 import com.example.litutur.data.repository.TREE_STAGE_MIN_POINTS
 import com.example.litutur.data.repository.TreeGrowthData
+import com.example.litutur.ui.components.ChildBottomBar
+import com.example.litutur.ui.components.ChildHomeTopBar
+import com.example.litutur.ui.components.ChildTab
 import com.example.litutur.ui.components.PohonIllustration
 import com.example.litutur.ui.components.TREE_FRUIT_SIZE_FRACTION
 import com.example.litutur.ui.components.TactileBox
@@ -54,8 +57,8 @@ private val treeStages = listOf(
 
 @Composable
 fun PohonKisahScreen(
-    childName: String = "Budi",
-    childPoints: Int = 135,
+    childName: String = "Sahabat Kecil",
+    childPoints: Int = 0,
     storiesCount: Int = 0,
     treeGrowth: TreeGrowthData = TreeGrowthData(1, "Tunas Kecil 🌱", 0.5f, 25, "Bibit Hijau"),
     stickers: List<StikerModel> = emptyList(),
@@ -97,103 +100,16 @@ fun PohonKisahScreen(
 
     Scaffold(
         topBar = {
-            Surface(color = LituturSurface.copy(alpha = 0.95f), shadowElevation = 2.dp) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .padding(end = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(LituturPrimaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Filled.Face, contentDescription = null, tint = Color.White)
-                        }
-                        Column {
-                            Text("LITUTUR ANAK", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = LituturOutline)
-                            Text(
-                                "Halo, $childName! 🌟",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = LituturTextDark,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(50),
-                            color = LituturSurfaceHigh
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
-                                Text(
-                                    "$childPoints Koin",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = LituturTextDark,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
-                        IconButton(
-                            onClick = onRequestParentMode,
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(LituturSurfaceVariant)
-                        ) {
-                            Icon(Icons.Filled.Lock, contentDescription = "Kunci Orang Tua", tint = LituturTextVariant)
-                        }
-                    }
-                }
-            }
+            ChildHomeTopBar(
+                title = "Pohon Kisah $childName",
+                coins = childPoints,
+                onRequestParentMode = onRequestParentMode,
+                label = "TAMAN BACA",
+                icon = Icons.Filled.Park
+            )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { onBottomTabSelected(0) },
-                    icon = { Icon(Icons.Default.AutoStories, null) },
-                    label = { Text("Beranda") }
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Park, null) },
-                    label = { Text("Pohon Kisah", fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, indicatorColor = LituturPurple)
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = { onBottomTabSelected(2) },
-                    icon = { Icon(Icons.Default.Stars, null) },
-                    label = { Text("Album") }
-                )
-            }
+            ChildBottomBar(selected = ChildTab.TREE, onTabSelected = onBottomTabSelected)
         }
     ) { innerPadding ->
         Column(

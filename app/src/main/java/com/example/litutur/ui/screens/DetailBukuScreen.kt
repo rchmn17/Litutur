@@ -23,7 +23,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.litutur.data.model.CeritaBukuModel
+import com.example.litutur.ui.components.ChildDetailTopBar
+import com.example.litutur.ui.components.ChildIconAction
 import com.example.litutur.ui.components.TactileBox
+import com.example.litutur.ui.components.rememberLituturSpeaker
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import com.example.litutur.ui.theme.*
 
 @Composable
@@ -51,58 +57,26 @@ fun DetailBukuScreen(
     }
 
     val hasNarration = book.chapters.any { !it.audioUrl.isNullOrBlank() }
+    val speaker = rememberLituturSpeaker()
+    val detailContext = LocalContext.current
 
     Scaffold(
         topBar = {
-            Surface(color = LituturSurface.copy(alpha = 0.95f), shadowElevation = 2.dp) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        IconButton(
-                            onClick = onBackClick,
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(LituturSurfaceHigh)
-                        ) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Kembali", tint = LituturTextDark)
-                        }
-                        Text("Detail Buku", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconButton(
-                            onClick = {},
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(LituturSurfaceVariant)
-                        ) {
-                            Icon(Icons.Default.VolumeUp, contentDescription = "Narasi", tint = LituturPrimary)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(LituturPrimary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+            ChildDetailTopBar(title = "Detail Buku", onBack = {
+                speaker.stop()
+                onBackClick()
+            }) {
+                ChildIconAction(
+                    icon = Icons.AutoMirrored.Filled.VolumeUp,
+                    contentDescription = "Dengarkan sinopsis",
+                    tint = LituturPrimary,
+                    onClick = {
+                        val text = "${book.title}. ${book.sinopsis.ifBlank { book.moralCerita }}"
+                        if (!speaker.speak(text)) {
+                            Toast.makeText(detailContext, "Suara sedang disiapkan, coba lagi sebentar ya", Toast.LENGTH_SHORT).show()
                         }
                     }
-                }
+                )
             }
         }
     ) { innerPadding ->

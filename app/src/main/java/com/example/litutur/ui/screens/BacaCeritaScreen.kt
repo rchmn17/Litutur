@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.litutur.data.model.CeritaBukuModel
+import com.example.litutur.ui.components.ChildDetailTopBar
+import com.example.litutur.ui.components.ChildIconAction
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.theme.*
 import kotlinx.coroutines.delay
@@ -48,12 +50,6 @@ fun BacaCeritaScreen(
     var isAudioPlaying by remember { mutableStateOf(false) }
     var isTtsReady by remember { mutableStateOf(false) }
     var ttsInstance by remember { mutableStateOf<TextToSpeech?>(null) }
-
-    val fullStoryNarration = remember(bookTitle) {
-        "Bab dua dari lima. $bookTitle. " +
-        "Meskipun tubuhnya paling besar di antara teman-temannya, Leo tidak pernah sombong. " +
-        "Ketika mendengar cicitan cemas sang burung pipit, Leo segera melompat ke dahan pohon untuk membantunya lepas dengan selamat."
-    }
 
     DisposableEffect(context) {
         var textToSpeech: TextToSpeech? = null
@@ -93,6 +89,21 @@ fun BacaCeritaScreen(
     val vocabWord = chapter?.vocabWord?.takeIf { it.isNotBlank() }
     val vocabMeaning = chapter?.vocabMeaning.orEmpty()
 
+    // Narasi dibangun dari bab yang sedang dibuka (bukan teks contoh statis)
+    val fullStoryNarration = remember(bookTitle, chapterIndex, chapter) {
+        buildString {
+            append("Bab ${chapterIndex + 1} dari ${totalChapters.coerceAtLeast(1)}. ")
+            chapter?.title?.takeIf { it.isNotBlank() }?.let { append(it).append(". ") }
+            append(chapter?.textContent.orEmpty())
+        }
+    }
+
+    // Pindah bab: hentikan narasi bab sebelumnya, lalu bacakan bab baru jika narasi aktif
+    LaunchedEffect(chapterIndex, isTtsReady) {
+        stopSpeaking()
+        if (isAudioPlaying && chapter != null) speak(fullStoryNarration)
+    }
+
     LaunchedEffect(showRoarEffect) {
         if (showRoarEffect) {
             delay(1200)
@@ -115,76 +126,30 @@ fun BacaCeritaScreen(
 
     Scaffold(
         topBar = {
-            Surface(color = LituturSurface.copy(alpha = 0.95f), shadowElevation = 2.dp) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .weight(1f, fill = false)
-                            .padding(end = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        IconButton(
-                            onClick = {
-                                stopSpeaking()
-                                onBackClick()
-                            },
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(LituturSurfaceHigh)
-                        ) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Kembali", tint = LituturTextDark)
-                        }
-                        Text(bookTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = LituturTextDark, maxLines = 1)
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Speaker Toggle Button (Aktifkan / Nonaktifkan Suara)
-                        IconButton(
-                            onClick = {
-                                isAudioPlaying = !isAudioPlaying
-                                if (isAudioPlaying) {
-                                    speak(fullStoryNarration)
-                                    Toast.makeText(context, "🔊 Suara narasi aktif", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    stopSpeaking()
-                                    Toast.makeText(context, "🔇 Suara narasi dinonaktifkan", Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isAudioPlaying) LituturTertiaryFixed else LituturSurfaceVariant)
-                        ) {
-                            Icon(
-                                imageVector = if (isAudioPlaying) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                                contentDescription = if (isAudioPlaying) "Matikan Suara Narasi" else "Nyalakan Suara Narasi",
-                                tint = if (isAudioPlaying) LituturTertiary else LituturOutline
-                            )
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(LituturPrimary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        }
-                    }
+            ChildDetailTopBar(
+                title = bookTitle,
+                onBack = {
+                    stopSpeaking()
+                    onBackClick()
                 }
+            ) {
+                // Tombol narasi (aktif / nonaktif)
+                ChildIconAction(
+                    icon = if (isAudioPlaying) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                    contentDescription = if (isAudioPlaying) "Matikan Suara Narasi" else "Nyalakan Suara Narasi",
+                    containerColor = if (isAudioPlaying) LituturTertiaryFixed else LituturSurfaceVariant,
+                    tint = if (isAudioPlaying) LituturTertiary else LituturOutline,
+                    onClick = {
+                        isAudioPlaying = !isAudioPlaying
+                        if (isAudioPlaying) {
+                            speak(fullStoryNarration)
+                            Toast.makeText(context, "🔊 Suara narasi aktif", Toast.LENGTH_SHORT).show()
+                        } else {
+                            stopSpeaking()
+                            Toast.makeText(context, "🔇 Suara narasi dinonaktifkan", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
             }
         }
     ) { innerPadding ->
@@ -300,7 +265,10 @@ fun BacaCeritaScreen(
                         .background(Color.White.copy(alpha = 0.95f))
                         .clickable {
                             showRoarEffect = true
-                            speak("Rawrr! Aku Leo si Singa yang ramah dan baik hati!")
+                            speak(
+                                vocabWord?.let { "Kata baru hari ini: $it. $vocabMeaning" }
+                                    ?: "Hore! Ayo lanjutkan membaca ${chapter.title.ifBlank { bookTitle }}!"
+                            )
                         }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {

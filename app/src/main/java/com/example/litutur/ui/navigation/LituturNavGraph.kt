@@ -19,6 +19,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,13 +70,15 @@ sealed class Screen(val route: String) {
     object StickerAlbum : Screen("sticker_album")
 }
 
-@Composable
-fun LituturNavGraph(
-    navController: NavHostController = rememberNavController()
-) {
-    LituturAppNavigation(navController = navController)
-}
-
+/**
+ * Navigasi internal Mode Anak.
+ *
+ * Catatan: dulu ada overload `LituturNavGraph(navController)` yang langsung memanggil fungsi ini
+ * dengan `onReturnToParentMode = {}`. Karena overload itu memiliki lebih sedikit parameter default,
+ * Kotlin memilihnya untuk panggilan `LituturNavGraph()` di MainActivity, sehingga aplikasi berjalan
+ * di Mode Anak "yatim" dan PIN yang benar tidak pernah membawa kembali ke Mode Orang Tua.
+ * Overload tersebut sudah dihapus; satu-satunya titik masuk adalah [LituturNavGraph] di bawah.
+ */
 @Composable
 fun LituturAppNavigation(
     parentState: ParentUiState = ParentUiState(),
@@ -88,6 +91,8 @@ fun LituturAppNavigation(
     var showPinDialog by remember { mutableStateOf(false) }
     val childState by childViewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val returnToParent by rememberUpdatedState(onReturnToParentMode)
+    val syncProgress by rememberUpdatedState(onSyncChildProgress)
 
     val selectedChild = parentState.selectedChild
     val parentUid = parentState.parentUser?.uid?.takeIf { it.isNotBlank() }
@@ -121,15 +126,13 @@ fun LituturAppNavigation(
         ParentPinDialog(
             expectedPin = expectedPin,
             onDismiss = { showPinDialog = false },
-           onSuccess = {
-               showPinDialog = false
-               runCatching {
-                   childViewModel.uiState.value.childProfile?.let { child ->
-                       onSyncChildProgress(child, childViewModel.uiState.value.readingLogs)
-                   }
-               }
-               onReturnToParentMode()
-           }
+            onSuccess = {
+                showPinDialog = false
+                // Salin progres terbaru anak ke Mode Orang Tua (tanpa menulis ulang ke Firestore)
+                val latest = childViewModel.uiState.value
+                latest.childProfile?.let { child -> syncProgress(child, latest.readingLogs) }
+                returnToParent()
+            }
         )
     }
 
@@ -171,7 +174,7 @@ fun LituturAppNavigation(
             }
             DashboardAnakScreen(
                 childName = childName,
-                childPoints = childPoints,
+                childPoints = childState.availableCoins, // header seragam: saldo koin
                 books = childState.displayedBooks,
                 categories = childState.categories,
                 selectedCategoryIndex = childState.selectedCategoryIndex,
