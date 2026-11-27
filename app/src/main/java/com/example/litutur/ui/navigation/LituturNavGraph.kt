@@ -128,7 +128,7 @@ fun LituturAppNavigation(
     fun navigateChildTab(tab: Int) {
         val targetRoute = when (tab) {
             1 -> Screen.StoryTree.route
-            2, 3 -> Screen.StickerAlbum.route
+            2 -> Screen.StickerAlbum.route
             else -> Screen.Dashboard.route
         }
         if (targetRoute == Screen.Dashboard.route) {
@@ -316,6 +316,7 @@ fun LituturAppNavigation(
                 childPoints = childState.availableCoins, // header menampilkan saldo koin
                 storiesCount = storiesCount,
                 treeGrowth = childState.treeGrowth,
+                stickers = childState.stickers,
                 isWateredToday = childState.isWateredToday,
                 waterRewardPoints = ChildRewards.WATER_TREE_POINTS,
                 onWaterTree = { childViewModel.waterTree(parentUid) },

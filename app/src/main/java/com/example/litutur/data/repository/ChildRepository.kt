@@ -538,6 +538,13 @@ private const val TAG = "ChildRepository"
 /**
  * Data Model Hasil Kalkulasi Pohon Kisah Gamifikasi
  */
+/**
+ * Batas poin minimal tiap tahap Pohon Kisah (indeks 0 = tahap 1).
+ * HARUS sama dengan ambang di [ChildRepository.calculateTreeGrowth]; dipakai layar untuk
+ * menampilkan "xx+ Poin" pada daftar tahap.
+ */
+val TREE_STAGE_MIN_POINTS = listOf(0, 50, 120, 250)
+
 data class TreeGrowthData(
     val stage: Int,             // 1: Tunas, 2: Bibit, 3: Pohon Muda, 4: Pohon Rimbun
     val stageLabel: String,
