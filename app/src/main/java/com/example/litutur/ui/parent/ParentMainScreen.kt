@@ -29,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,7 +61,7 @@ fun ParentMainScreen(
     onClearMessages: () -> Unit = {},
     onLogout: () -> Unit = {}
 ) {
-    var selectedTab by remember { mutableStateOf(ParentNavTab.HOME) }
+    var selectedTab by rememberSaveable { mutableStateOf(ParentNavTab.HOME) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.statusMessage, uiState.errorMessage) {

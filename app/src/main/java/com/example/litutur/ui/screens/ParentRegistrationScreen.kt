@@ -53,6 +53,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,12 +78,12 @@ fun ParentRegistrationScreen(
     onRegisterSubmit: (name: String, email: String, whatsapp: String, password: String) -> Unit = { _, _, _, _ -> },
     onNavigateToLogin: () -> Unit = {}
 ) {
-    var parentName by remember { mutableStateOf("") }
-    var parentEmail by remember { mutableStateOf("") }
-    var parentWa by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
-    var isTermsAccepted by remember { mutableStateOf(true) }
+    var parentName by rememberSaveable { mutableStateOf("") }
+    var parentEmail by rememberSaveable { mutableStateOf("") }
+    var parentWa by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var isTermsAccepted by rememberSaveable { mutableStateOf(true) }
 
     val passwordStrengthText = when {
         password.isEmpty() -> "Kekuatan kata sandi"

@@ -48,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,8 +76,8 @@ fun ParentCommunityScreen(
     onLikePost: (CommunityPostEntity) -> Unit = {},
     onOpenPostDetail: (CommunityPostEntity) -> Unit = {}
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Semua") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var selectedFilter by rememberSaveable { mutableStateOf("Semua") }
     val currentUid = uiState.parentUser?.uid.orEmpty()
 
     val filterChips = listOf("Semua", "Milestone", "Tips & Cerita")

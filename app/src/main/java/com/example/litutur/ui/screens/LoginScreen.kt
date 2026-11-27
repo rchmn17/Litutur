@@ -57,6 +57,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,12 +86,12 @@ fun LoginScreen(
     onForgotPassword: (email: String) -> Unit = {},
     onNavigateToRegister: () -> Unit = {}
 ) {
-    var emailText by remember { mutableStateOf("") }
-    var passwordText by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(true) }
-    var isParentModeTab by remember { mutableStateOf(true) }
-    var googleNotice by remember { mutableStateOf<String?>(null) }
+    var emailText by rememberSaveable { mutableStateOf("") }
+    var passwordText by rememberSaveable { mutableStateOf("") }
+    var isPasswordVisible by rememberSaveable { mutableStateOf(false) }
+    var rememberMe by rememberSaveable { mutableStateOf(true) }
+    var isParentModeTab by rememberSaveable { mutableStateOf(true) }
+    var googleNotice by rememberSaveable { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {

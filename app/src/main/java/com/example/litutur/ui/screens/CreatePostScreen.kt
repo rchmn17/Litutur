@@ -49,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,12 +73,12 @@ fun CreatePostScreen(
     onBack: () -> Unit = {},
     onPublishPost: (caption: String, milestone: AutoMilestoneOption?, bookTitle: String?, photoUri: Uri?) -> Unit = { _, _, _, _ -> }
 ) {
-    var postText by remember { mutableStateOf("") }
-    var bookTitle by remember { mutableStateOf("") }
-    var selectedMilestoneId by remember {
+    var postText by rememberSaveable { mutableStateOf("") }
+    var bookTitle by rememberSaveable { mutableStateOf("") }
+    var selectedMilestoneId by rememberSaveable {
         mutableStateOf(uiState.autoMilestones.firstOrNull()?.id ?: "none")
     }
-    var selectedPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedPhotoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()

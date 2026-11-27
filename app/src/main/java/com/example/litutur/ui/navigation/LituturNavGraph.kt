@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,7 +89,7 @@ fun LituturAppNavigation(
     navController: NavHostController = rememberNavController(),
     childViewModel: ChildViewModel = viewModel()
 ) {
-    var showPinDialog by remember { mutableStateOf(false) }
+    var showPinDialog by rememberSaveable { mutableStateOf(false) }
     val childState by childViewModel.uiState.collectAsState()
     val context = LocalContext.current
     val returnToParent by rememberUpdatedState(onReturnToParentMode)
@@ -363,8 +364,8 @@ fun LituturNavGraph(
     val context = LocalContext.current
     val authState by authViewModel.uiState.collectAsState()
     val parentState by parentViewModel.uiState.collectAsState()
-    var currentScreen by remember { mutableStateOf(LituturScreen.SPLASH_WELCOME) }
-    var hasInitializedRoute by remember { mutableStateOf(false) }
+    var currentScreen by rememberSaveable { mutableStateOf(LituturScreen.SPLASH_WELCOME) }
+    var hasInitializedRoute by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(authState.isCheckingSession, authState.isLoggedIn) {
         if (!authState.isCheckingSession && !hasInitializedRoute) {
@@ -373,8 +374,12 @@ fun LituturNavGraph(
                 if (authState.children.isEmpty()) {
                     currentScreen = LituturScreen.CHILD_PROFILE_SETUP
                 } else {
-                    parentViewModel.loadParentDashboard(authState.parentUser, authState.children)
-                    currentScreen = LituturScreen.PARENT_MAIN
+                    if (parentState.children.isEmpty()) {
+                        parentViewModel.loadParentDashboard(authState.parentUser, authState.children)
+                    }
+                    if (currentScreen == LituturScreen.SPLASH_WELCOME) {
+                        currentScreen = LituturScreen.PARENT_MAIN
+                    }
                 }
             }
         }
