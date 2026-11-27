@@ -110,7 +110,7 @@ class ParentViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val loadedParent = parent ?: authRepository.getParentProfile(uid).getOrNull()
+            val loadedParent = authRepository.getParentProfile(uid).getOrNull()?: parent?: _uiState.value.parentUser
             val children = parentRepository.getChildren(uid).getOrDefault(initialChildren)
             val posts = parentRepository.getCommunityPosts().getOrDefault(emptyList())
 
