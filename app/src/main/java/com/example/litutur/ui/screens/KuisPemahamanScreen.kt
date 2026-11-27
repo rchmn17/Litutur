@@ -23,6 +23,7 @@ import coil.compose.AsyncImage
 import com.example.litutur.data.model.SoalKuisModel
 import com.example.litutur.ui.components.ChildDetailTopBar
 import com.example.litutur.ui.components.ChildIconAction
+import com.example.litutur.ui.components.LituturLoadingView
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.components.rememberLituturSpeaker
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -71,12 +72,7 @@ fun KuisPemahamanScreen(
 
     // Soal sedang dimuat
     if (question == null) {
-        Box(
-            modifier = Modifier.fillMaxSize().background(screenBackground),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = LituturPurple)
-        }
+        LituturLoadingView(message = "Menyiapkan pertanyaan kuis...")
         return
     }
 

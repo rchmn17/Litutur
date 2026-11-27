@@ -29,6 +29,7 @@ import coil.compose.AsyncImage
 import com.example.litutur.data.model.CeritaBukuModel
 import com.example.litutur.ui.components.ChildDetailTopBar
 import com.example.litutur.ui.components.ChildIconAction
+import com.example.litutur.ui.components.LituturLoadingView
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.theme.*
 import kotlinx.coroutines.delay
@@ -111,16 +112,9 @@ fun BacaCeritaScreen(
         }
     }
 
-    // Buku belum selesai dimuat (atau judul belum cocok): tampilkan loading
+    // Buku belum selesai dimuat (atau judul belum cocok): tampilkan loading berlogo Litutur
     if (chapter == null) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(LituturBgStart, LituturBgMid, LituturBgEnd))),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = LituturPurple)
-        }
+        LituturLoadingView(message = "Menyiapkan halaman cerita...")
         return
     }
 

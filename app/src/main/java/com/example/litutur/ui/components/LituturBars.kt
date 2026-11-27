@@ -1,14 +1,18 @@
 package com.example.litutur.ui.components
 
 import android.speech.tts.TextToSpeech
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -24,6 +28,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Park
 import androidx.compose.material.icons.filled.Stars
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,13 +50,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.litutur.R
+import com.example.litutur.ui.theme.LituturBgEnd
+import com.example.litutur.ui.theme.LituturBgMid
+import com.example.litutur.ui.theme.LituturBgStart
 import com.example.litutur.ui.theme.LituturOutline
 import com.example.litutur.ui.theme.LituturPrimaryContainer
 import com.example.litutur.ui.theme.LituturPurple
@@ -64,6 +76,81 @@ import com.example.litutur.ui.theme.LituturTextVariant
 import com.example.litutur.ui.theme.ScreenBaseCanvas
 import com.example.litutur.ui.theme.TextPrimarySlate
 import java.util.Locale
+
+// =====================================================================
+// LAYAR LOADING BRANDED LITUTUR
+// =====================================================================
+
+/**
+ * Tampilan loading seragam dengan logo resmi Litutur (`ic_logo_litutur`).
+ * Dapat dipakai sebagai layar penuh (`fullScreen = true`) maupun blok loading di dalam halaman.
+ */
+@Composable
+fun LituturLoadingView(
+    message: String = "Menyiapkan petualangan literasi...",
+    fullScreen: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    val containerModifier = if (fullScreen) {
+        modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(LituturBgStart, LituturBgMid, LituturBgEnd)))
+    } else {
+        modifier
+            .fillMaxWidth()
+            .padding(vertical = 32.dp)
+    }
+
+    Box(
+        modifier = containerModifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(Color(0xFF282828))
+                    .border(2.5.dp, Color(0xFFFBBF24), RoundedCornerShape(28.dp))
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_logo_litutur),
+                    contentDescription = "Logo Litutur",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(
+                text = "LITUTUR",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = LituturTextDark,
+                letterSpacing = 1.5.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = message,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = LituturTextVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            CircularProgressIndicator(
+                color = Color(0xFFF59E0B),
+                trackColor = Color(0xFFFDE68A),
+                strokeWidth = 3.dp,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+    }
+}
 
 // =====================================================================
 // MODE ORANG TUA
@@ -84,14 +171,16 @@ fun ParentTopBar(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF6BFE9C)),
+                        .background(Color(0xFF282828))
+                        .border(1.5.dp, Color(0xFFFBBF24), CircleShape)
+                        .padding(6.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.FamilyRestroom,
-                        contentDescription = null,
-                        tint = Color(0xFF00210C),
-                        modifier = Modifier.size(22.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_logo_litutur),
+                        contentDescription = "Logo Litutur",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
@@ -191,10 +280,17 @@ fun ChildHomeTopBar(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(LituturPrimaryContainer),
+                        .background(Color(0xFF282828))
+                        .border(1.5.dp, Color(0xFFFBBF24), CircleShape)
+                        .padding(6.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = Color.White)
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_logo_litutur),
+                        contentDescription = "Logo Litutur",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
                 Column {
                     Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturOutline)

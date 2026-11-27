@@ -25,6 +25,7 @@ import coil.compose.AsyncImage
 import com.example.litutur.data.model.CeritaBukuModel
 import com.example.litutur.ui.components.ChildDetailTopBar
 import com.example.litutur.ui.components.ChildIconAction
+import com.example.litutur.ui.components.LituturLoadingView
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.components.rememberLituturSpeaker
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -43,16 +44,9 @@ fun DetailBukuScreen(
 ) {
     var selectedMode by remember { mutableStateOf("narrated") }
 
-    // Buku belum selesai dimuat: tampilkan loading
+    // Buku belum selesai dimuat: tampilkan loading berlogo Litutur
     if (book == null) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(LituturBgStart, LituturBgMid, LituturBgEnd))),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = LituturPurple)
-        }
+        LituturLoadingView(message = "Membuka detail buku...")
         return
     }
 

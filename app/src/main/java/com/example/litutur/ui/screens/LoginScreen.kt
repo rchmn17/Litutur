@@ -123,14 +123,16 @@ fun LoginScreen(
                             .padding(end = 12.dp)
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF4F46E5)),
+                            .background(Color(0xFF282828))
+                            .border(1.5.dp, Color(0xFFFBBF24), CircleShape)
+                            .padding(6.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                        Image(
+                            painter = painterResource(id = com.example.litutur.R.drawable.ic_logo_litutur),
+                            contentDescription = "Logo Litutur",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 },
@@ -164,16 +166,17 @@ fun LoginScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White)
-                                .border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(12.dp)),
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0xFF282828))
+                                .border(1.5.dp, Color(0xFFFBBF24), RoundedCornerShape(14.dp))
+                                .padding(8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(id = com.example.litutur.R.drawable.petualangan),
-                                contentDescription = "Ilustrasi Petualangan Litutur",
-                                contentScale = ContentScale.Crop,
+                                painter = painterResource(id = com.example.litutur.R.drawable.ic_logo_litutur),
+                                contentDescription = "Logo Litutur",
+                                contentScale = ContentScale.Fit,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }

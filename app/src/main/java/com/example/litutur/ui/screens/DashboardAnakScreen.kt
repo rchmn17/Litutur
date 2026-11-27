@@ -29,6 +29,7 @@ import com.example.litutur.data.remote.LituturAssets
 import com.example.litutur.ui.components.ChildBottomBar
 import com.example.litutur.ui.components.ChildHomeTopBar
 import com.example.litutur.ui.components.ChildTab
+import com.example.litutur.ui.components.LituturLoadingView
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.components.rememberAssetUrl
 import com.example.litutur.ui.theme.*
@@ -285,12 +286,10 @@ fun DashboardAnakScreen(
 
             when {
                 isLoading && books.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = LituturPurple)
-                    }
+                    LituturLoadingView(
+                        message = "Memuat koleksi cerita...",
+                        fullScreen = false
+                    )
                 }
 
                 books.isEmpty() -> {

@@ -46,12 +46,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.litutur.R
 import com.example.litutur.ui.theme.CoralOrangePrimary
 import com.example.litutur.ui.theme.LituturTheme
 import com.example.litutur.ui.theme.SecondaryBrandGreen
@@ -127,16 +130,18 @@ fun SplashWelcomeScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(124.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFFEF3C7)),
+                            .background(Color(0xFF282828))
+                            .border(3.dp, Color(0xFFFBBF24), CircleShape)
+                            .padding(22.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoStories,
-                            contentDescription = "Mascot",
-                            tint = Color(0xFF7C3AED),
-                            modifier = Modifier.size(64.dp)
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_logo_litutur),
+                            contentDescription = "Logo Litutur",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
 

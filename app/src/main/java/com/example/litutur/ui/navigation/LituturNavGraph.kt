@@ -33,6 +33,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.litutur.data.model.ChildProfileEntity
 import com.example.litutur.data.model.ReadingLogEntity
 import com.example.litutur.data.repository.CloudinaryAssetSync
+import com.example.litutur.ui.components.LituturLoadingView
 import com.example.litutur.ui.model.LituturScreen
 import com.example.litutur.ui.parent.ParentMainScreen
 import com.example.litutur.ui.parent.ParentPinDialog
@@ -261,9 +262,7 @@ fun LituturAppNavigation(
             val quizBook = childState.currentBook?.takeIf { it.title.equals(bookTitle, ignoreCase = true) }
 
             if (quizBook == null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                LituturLoadingView(message = "Menyiapkan kuis seru...")
             } else {
                 val question = childState.quizQuestions.getOrNull(childState.currentQuestionIndex)
                 KuisPemahamanScreen(
@@ -403,12 +402,7 @@ fun LituturNavGraph(
     }
 
     if (authState.isCheckingSession) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
+        LituturLoadingView(message = "Memuat sesi akun Litutur...")
         return
     }
 
