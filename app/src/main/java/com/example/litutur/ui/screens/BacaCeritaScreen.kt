@@ -29,6 +29,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun BacaCeritaScreen(
+    bookTitle: String = "Singa yang Baik Hati",
     onBackClick: () -> Unit = {},
     onNextChapter: () -> Unit = {}
 ) {
@@ -67,7 +68,7 @@ fun BacaCeritaScreen(
                         ) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Kembali", tint = LituturTextDark)
                         }
-                        Text("Baca Cerita", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Text(bookTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = LituturTextDark, maxLines = 1)
                     }
 
                     Row(
@@ -163,7 +164,7 @@ fun BacaCeritaScreen(
                     }
                 }
 
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = showRoarEffect,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut(),
@@ -292,7 +293,7 @@ fun BacaCeritaScreen(
                         color = LituturTextDark
                     )
 
-                    AnimatedVisibility(visible = showVocabTooltip) {
+                    androidx.compose.animation.AnimatedVisibility(visible = showVocabTooltip) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = LituturSurfaceHigh),
