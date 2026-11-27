@@ -121,14 +121,15 @@ fun LituturAppNavigation(
         ParentPinDialog(
             expectedPin = expectedPin,
             onDismiss = { showPinDialog = false },
-            onSuccess = {
-                showPinDialog = false
-                // Bawa progres terbaru Mode Anak (poin, siram, favorit, stiker) ke Mode Orang Tua
-                childViewModel.uiState.value.childProfile?.let { child ->
-                    onSyncChildProgress(child, childViewModel.uiState.value.readingLogs)
-                }
-                onReturnToParentMode()
-            }
+           onSuccess = {
+               showPinDialog = false
+               runCatching {
+                   childViewModel.uiState.value.childProfile?.let { child ->
+                       onSyncChildProgress(child, childViewModel.uiState.value.readingLogs)
+                   }
+               }
+               onReturnToParentMode()
+           }
         )
     }
 
