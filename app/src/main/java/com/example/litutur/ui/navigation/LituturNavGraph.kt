@@ -70,6 +70,13 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
+fun LituturNavGraph(
+    navController: NavHostController = rememberNavController()
+) {
+    LituturAppNavigation(navController = navController)
+}
+
+@Composable
 fun LituturAppNavigation(
     parentState: ParentUiState = ParentUiState(),
     onQuizCompleted: (log: ReadingLogEntity, pointsEarned: Int) -> Unit = { _, _ -> },

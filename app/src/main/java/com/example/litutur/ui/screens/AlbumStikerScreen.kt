@@ -1,5 +1,6 @@
 package com.example.litutur.ui.screens
 
+import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import coil.compose.AsyncImage
 import com.example.litutur.data.model.StikerModel
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.theme.*
+import java.util.Locale
 
 @Composable
 fun AlbumStikerScreen(
@@ -45,6 +47,36 @@ fun AlbumStikerScreen(
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
+    var ttsInstance by remember { mutableStateOf<TextToSpeech?>(null) }
+    var isTtsReady by remember { mutableStateOf(false) }
+
+    DisposableEffect(context) {
+        var textToSpeech: TextToSpeech? = null
+        textToSpeech = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = textToSpeech?.setLanguage(Locale("id", "ID"))
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    textToSpeech?.language = Locale.getDefault()
+                }
+                textToSpeech?.setPitch(1.2f)
+                textToSpeech?.setSpeechRate(0.9f)
+                isTtsReady = true
+            }
+        }
+        ttsInstance = textToSpeech
+
+        onDispose {
+            textToSpeech.stop()
+            textToSpeech.shutdown()
+        }
+    }
+
+    fun playStickerSound(text: String) {
+        if (isTtsReady && ttsInstance != null) {
+            ttsInstance?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "StickerSound_${System.currentTimeMillis()}")
+        }
+    }
+
     var selectedFilterIndex by remember { mutableStateOf(0) }
 
     // Filter dibangun dari kategori yang benar-benar ada di data stiker
@@ -275,6 +307,7 @@ fun AlbumStikerScreen(
                             if (sticker.isUnlocked) {
                                 Button(
                                     onClick = {
+                                        playStickerSound(sticker.soundText.replace("🦁", "").replace("🐰", "").replace("🐘", ""))
                                         Toast.makeText(context, sticker.soundText, Toast.LENGTH_SHORT).show()
                                     },
                                     shape = RoundedCornerShape(8.dp),

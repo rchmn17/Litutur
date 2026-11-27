@@ -1,6 +1,8 @@
 package com.example.litutur.ui.screens
 
 import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,8 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +67,8 @@ fun PohonKisahScreen(
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
+    var showWaterCelebration by remember { mutableStateOf(false) }
+
     val isMaxStage = treeGrowth.pointsToNext <= 0
     val stage = treeGrowth.stage.coerceIn(1, treeStages.size)
     val stageInfo = treeStages[stage - 1]
@@ -136,7 +139,10 @@ fun PohonKisahScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Surface(shape = RoundedCornerShape(50), color = LituturSurfaceHigh) {
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = LituturSurfaceHigh
+                        ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -168,7 +174,12 @@ fun PohonKisahScreen(
         },
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(0) }, icon = { Icon(Icons.Default.AutoStories, null) }, label = { Text("Beranda") })
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { onBottomTabSelected(0) },
+                    icon = { Icon(Icons.Default.AutoStories, null) },
+                    label = { Text("Beranda") }
+                )
                 NavigationBarItem(
                     selected = true,
                     onClick = {},
@@ -176,7 +187,12 @@ fun PohonKisahScreen(
                     label = { Text("Pohon Kisah", fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, indicatorColor = LituturPurple)
                 )
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(2) }, icon = { Icon(Icons.Default.Stars, null) }, label = { Text("Album") })
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { onBottomTabSelected(2) },
+                    icon = { Icon(Icons.Default.Stars, null) },
+                    label = { Text("Album") }
+                )
             }
         }
     ) { innerPadding ->
@@ -189,7 +205,7 @@ fun PohonKisahScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Pengalih Pohon Kisah / Album Stiker
+            // Segmented Tab Switcher (Pohon Kisah vs Album Stiker)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -264,6 +280,18 @@ fun PohonKisahScreen(
                     }
                 }
 
+                // Subtle gradient overlay for readability
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Black.copy(alpha = 0.25f), Color.Transparent, Color.Black.copy(alpha = 0.35f))
+                            )
+                        )
+                )
+
+                // Top badges over the tree
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -272,16 +300,25 @@ fun PohonKisahScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.95f), shadowElevation = 2.dp) {
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = Color.White.copy(alpha = 0.95f),
+                        shadowElevation = 2.dp
+                    ) {
                         Text(
-                            "📖 $storiesCount Dongeng",
+                            "🌱 $storiesCount Dongeng Selesai",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = LituturPrimary,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         )
                     }
-                    Surface(shape = RoundedCornerShape(50), color = LituturSecondaryContainer, shadowElevation = 2.dp) {
+
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = LituturSecondaryContainer,
+                        shadowElevation = 2.dp
+                    ) {
                         Text(
                             "${stageInfo.emoji} Tahap $stage/${treeStages.size}",
                             fontSize = 11.sp,
@@ -292,6 +329,7 @@ fun PohonKisahScreen(
                     }
                 }
 
+                // Bottom badge over the tree: Current Stage Name
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color.White.copy(alpha = 0.95f),
@@ -310,7 +348,7 @@ fun PohonKisahScreen(
                 }
             }
 
-            // ---------- Tahapan pertumbuhan (dengan gambar tiap level) ----------
+            // ---------- Tahapan pertumbuhan (dengan ilustrasi tiap level) ----------
             Card(
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -496,12 +534,47 @@ fun PohonKisahScreen(
                         )
                     }
 
+                    // Water celebration message
+                    AnimatedVisibility(
+                        visible = showWaterCelebration,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = LituturSecondaryContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text("💧", fontSize = 18.sp)
+                                Text(
+                                    "Segar sekali! Pohonmu tersenyum ceria dan mendapatkan nutrisi pertumbuhan!",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LituturSecondary
+                                )
+                            }
+                        }
+                    }
+
                     TactileBox(
                         modifier = Modifier.fillMaxWidth(),
                         backgroundColor = if (isWateredToday) LituturSecondary else LituturPurple,
                         shadowColor = if (isWateredToday) LituturSecondaryDim else LituturPurpleDark,
                         cornerRadius = 14.dp,
-                        onClick = onWaterTree
+                        onClick = {
+                            if (!isWateredToday) {
+                                onWaterTree()
+                                showWaterCelebration = true
+                                Toast.makeText(context, "💧 Pohon berhasil disiram! Tumbuh semakin subur!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "🌸 Pohon sudah segar hari ini! Datang lagi besok ya!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     ) {
                         Row(
                             modifier = Modifier
@@ -523,6 +596,7 @@ fun PohonKisahScreen(
                 }
             }
 
+            // Button to Album Stiker
             TactileBox(
                 modifier = Modifier.fillMaxWidth(),
                 backgroundColor = Color.White,

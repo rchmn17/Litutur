@@ -1,5 +1,7 @@
 package com.example.litutur.ui.screens
 
+import android.speech.tts.TextToSpeech
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -19,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,6 +30,7 @@ import com.example.litutur.data.model.CeritaBukuModel
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.theme.*
 import kotlinx.coroutines.delay
+import java.util.Locale
 
 @Composable
 fun BacaCeritaScreen(
@@ -37,10 +41,50 @@ fun BacaCeritaScreen(
     onPreviousChapter: () -> Unit = {},
     onNextChapter: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     // Reset tooltip kosakata setiap kali pindah bab
     var showVocabTooltip by remember(chapterIndex) { mutableStateOf(false) }
     var showRoarEffect by remember { mutableStateOf(false) }
-    var isAudioPlaying by remember { mutableStateOf(true) }
+    var isAudioPlaying by remember { mutableStateOf(false) }
+    var isTtsReady by remember { mutableStateOf(false) }
+    var ttsInstance by remember { mutableStateOf<TextToSpeech?>(null) }
+
+    val fullStoryNarration = remember(bookTitle) {
+        "Bab dua dari lima. $bookTitle. " +
+        "Meskipun tubuhnya paling besar di antara teman-temannya, Leo tidak pernah sombong. " +
+        "Ketika mendengar cicitan cemas sang burung pipit, Leo segera melompat ke dahan pohon untuk membantunya lepas dengan selamat."
+    }
+
+    DisposableEffect(context) {
+        var textToSpeech: TextToSpeech? = null
+        textToSpeech = TextToSpeech(context) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = textToSpeech?.setLanguage(Locale("id", "ID"))
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    textToSpeech?.language = Locale.getDefault()
+                }
+                textToSpeech?.setPitch(1.15f) // Suara ramah & menyenangkan untuk anak
+                textToSpeech?.setSpeechRate(0.85f) // Pelafalan jelas dan tenang
+                isTtsReady = true
+            }
+        }
+        ttsInstance = textToSpeech
+
+        onDispose {
+            textToSpeech.stop()
+            textToSpeech.shutdown()
+        }
+    }
+
+    fun speak(text: String) {
+        if (isTtsReady && ttsInstance != null) {
+            ttsInstance?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "LituturUtterance_${System.currentTimeMillis()}")
+        }
+    }
+
+    fun stopSpeaking() {
+        ttsInstance?.stop()
+    }
 
     val chapters = book?.chapters.orEmpty()
     val totalChapters = chapters.size
@@ -81,11 +125,17 @@ fun BacaCeritaScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .padding(end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         IconButton(
-                            onClick = onBackClick,
+                            onClick = {
+                                stopSpeaking()
+                                onBackClick()
+                            },
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(RoundedCornerShape(12.dp))
@@ -100,15 +150,30 @@ fun BacaCeritaScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // Speaker Toggle Button (Aktifkan / Nonaktifkan Suara)
                         IconButton(
-                            onClick = { isAudioPlaying = !isAudioPlaying },
+                            onClick = {
+                                isAudioPlaying = !isAudioPlaying
+                                if (isAudioPlaying) {
+                                    speak(fullStoryNarration)
+                                    Toast.makeText(context, "🔊 Suara narasi aktif", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    stopSpeaking()
+                                    Toast.makeText(context, "🔇 Suara narasi dinonaktifkan", Toast.LENGTH_SHORT).show()
+                                }
+                            },
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(LituturTertiaryFixed)
+                                .background(if (isAudioPlaying) LituturTertiaryFixed else LituturSurfaceVariant)
                         ) {
-                            Icon(Icons.Default.VolumeUp, contentDescription = "Audio", tint = LituturTertiary)
+                            Icon(
+                                imageVector = if (isAudioPlaying) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                                contentDescription = if (isAudioPlaying) "Matikan Suara Narasi" else "Nyalakan Suara Narasi",
+                                tint = if (isAudioPlaying) LituturTertiary else LituturOutline
+                            )
                         }
+
                         Box(
                             modifier = Modifier
                                 .size(32.dp)
@@ -176,16 +241,37 @@ fun BacaCeritaScreen(
                         Text("Bab ${chapterIndex + 1} dari $totalChapters", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                     }
 
+                    // Interactive Audio Status Badge
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
-                            .background(LituturPrimaryContainer)
+                            .background(if (isAudioPlaying) LituturPrimaryContainer else Color.Black.copy(alpha = 0.55f))
+                            .clickable {
+                                isAudioPlaying = !isAudioPlaying
+                                if (isAudioPlaying) {
+                                    speak(fullStoryNarration)
+                                    Toast.makeText(context, "🔊 Suara narasi aktif", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    stopSpeaking()
+                                    Toast.makeText(context, "🔇 Suara narasi dinonaktifkan", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(Icons.Default.VolumeUp, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        Text("Sedang Membaca", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Icon(
+                            imageVector = if (isAudioPlaying) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            if (isAudioPlaying) "Suara Aktif 🔊" else "Suara Mati 🔇",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
                 }
 
@@ -205,13 +291,17 @@ fun BacaCeritaScreen(
                     }
                 }
 
+                // Interactive character sound button
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 12.dp)
                         .clip(RoundedCornerShape(50))
                         .background(Color.White.copy(alpha = 0.95f))
-                        .clickable { showRoarEffect = true }
+                        .clickable {
+                            showRoarEffect = true
+                            speak("Rawrr! Aku Leo si Singa yang ramah dan baik hati!")
+                        }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Row(
@@ -296,7 +386,12 @@ fun BacaCeritaScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
                                 .background(LituturTertiaryFixed)
-                                .clickable { showVocabTooltip = !showVocabTooltip }
+                                .clickable {
+                                    showVocabTooltip = !showVocabTooltip
+                                    if (!showVocabTooltip) {
+                                        speak(vocabWord)
+                                    }
+                                }
                                 .padding(horizontal = 10.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -340,14 +435,16 @@ fun BacaCeritaScreen(
                                 )
 
                                 Button(
-                                    onClick = {},
+                                    onClick = {
+                                        speak("Dahan Pohon. Cabang kayu tempat daun, bunga, dan buah-buahan tumbuh di pohon rindang.")
+                                    },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                                     shape = RoundedCornerShape(50),
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
                                     Icon(Icons.Default.VolumeUp, contentDescription = null, tint = LituturTertiary, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Dengar Bunyi Kata", fontSize = 11.sp, color = LituturTertiary, fontWeight = FontWeight.Bold)
+                                    Text("Dengar Bunyi Kata 🔊", fontSize = 11.sp, color = LituturTertiary, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -365,7 +462,10 @@ fun BacaCeritaScreen(
                     shadowColor = LituturSurfaceVariant,
                     cornerRadius = 16.dp,
                     shadowDepth = 4.dp,
-                    onClick = onPreviousChapter
+                    onClick = {
+                        stopSpeaking()
+                        onPreviousChapter()
+                    }
                 ) {
                     Row(
                         modifier = Modifier
@@ -386,7 +486,10 @@ fun BacaCeritaScreen(
                     shadowColor = LituturPurpleDark,
                     cornerRadius = 16.dp,
                     shadowDepth = 4.dp,
-                    onClick = onNextChapter
+                    onClick = {
+                        stopSpeaking()
+                        onNextChapter()
+                    }
                 ) {
                     Row(
                         modifier = Modifier
