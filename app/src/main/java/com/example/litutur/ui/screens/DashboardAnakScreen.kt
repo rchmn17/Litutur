@@ -99,6 +99,9 @@ fun DashboardAnakScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .padding(end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -113,7 +116,14 @@ fun DashboardAnakScreen(
                         }
                         Column {
                             Text("LITUTUR ANAK", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturOutline)
-                            Text("Halo, $childName! 🌟", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Text(
+                                "Halo, $childName! 🌟",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LituturTextDark,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
 
@@ -121,16 +131,25 @@ fun DashboardAnakScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(LituturSurfaceHigh)
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = LituturSurfaceHigh
                         ) {
-                            Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("$childPoints Poin", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
+                                Text(
+                                    "$childPoints Poin",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LituturTextDark,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                         IconButton(
                             onClick = onRequestParentMode,
@@ -156,7 +175,6 @@ fun DashboardAnakScreen(
                 )
                 NavigationBarItem(selected = false, onClick = { onBottomTabSelected(1) }, icon = { Icon(Icons.Default.Park, null) }, label = { Text("Pohon Kisah") })
                 NavigationBarItem(selected = false, onClick = { onBottomTabSelected(2) }, icon = { Icon(Icons.Default.Stars, null) }, label = { Text("Album") })
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(3) }, icon = { Icon(Icons.Default.MilitaryTech, null) }, label = { Text("Prestasi") })
             }
         }
     ) { innerPadding ->

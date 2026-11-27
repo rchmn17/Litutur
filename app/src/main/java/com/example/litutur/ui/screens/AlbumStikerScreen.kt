@@ -73,25 +73,56 @@ fun AlbumStikerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text("Koleksi Stiker $childName ⭐", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                        Text("Selesaikan bacaan & kuis untuk membuka stiker!", fontSize = 11.sp, color = LituturOutline)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
+                    ) {
+                        Text(
+                            "Koleksi Stiker $childName ⭐",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = LituturTextDark,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "Selesaikan bacaan & kuis untuk membuka stiker!",
+                            fontSize = 11.sp,
+                            color = LituturOutline,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(LituturSurfaceHigh)
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = LituturSurfaceHigh
                         ) {
-                            Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("$childPoints Koin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.MonetizationOn,
+                                    contentDescription = null,
+                                    tint = LituturSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    "$childPoints Koin",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LituturTextDark,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                         IconButton(
                             onClick = onRequestParentMode,
@@ -108,8 +139,18 @@ fun AlbumStikerScreen(
         },
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(0) }, icon = { Icon(Icons.Default.AutoStories, null) }, label = { Text("Beranda") })
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(1) }, icon = { Icon(Icons.Default.Park, null) }, label = { Text("Pohon Kisah") })
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { onBottomTabSelected(0) },
+                    icon = { Icon(Icons.Default.AutoStories, null) },
+                    label = { Text("Beranda") }
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { onBottomTabSelected(1) },
+                    icon = { Icon(Icons.Default.Park, null) },
+                    label = { Text("Pohon Kisah") }
+                )
                 NavigationBarItem(
                     selected = true,
                     onClick = {},
@@ -117,7 +158,6 @@ fun AlbumStikerScreen(
                     label = { Text("Album", fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, indicatorColor = LituturPurple)
                 )
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(3) }, icon = { Icon(Icons.Default.MilitaryTech, null) }, label = { Text("Prestasi") })
             }
         }
     ) { innerPadding ->

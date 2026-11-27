@@ -99,7 +99,7 @@ fun LituturAppNavigation(
         val targetRoute = when (tab) {
             0 -> Screen.Dashboard.route
             1 -> Screen.StoryTree.route
-            2, 3 -> Screen.StickerAlbum.route
+            2 -> Screen.StickerAlbum.route
             else -> Screen.Dashboard.route
         }
         navController.navigate(targetRoute) {
