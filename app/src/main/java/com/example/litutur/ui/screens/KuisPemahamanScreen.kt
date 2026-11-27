@@ -20,25 +20,62 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.litutur.data.model.SoalKuisModel
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.theme.*
-
-data class QuizOption(val id: String, val letter: String, val text: String)
 
 @Composable
 fun KuisPemahamanScreen(
     bookTitle: String = "Singa yang Baik Hati",
-    onBackClick: () -> Unit = {},
-    onQuizComplete: (quizScore: Int, pointsEarned: Int) -> Unit = { _, _ -> }
+    question: SoalKuisModel? = null,
+    questionIndex: Int = 0,
+    totalQuestions: Int = 0,
+    selectedOptionId: String? = null,
+    illustrationUrl: String? = null,
+    hint: String = "",
+    onOptionSelected: (String) -> Unit = {},
+    onSubmit: () -> Unit = {},
+    onBackClick: () -> Unit = {}
 ) {
-    var selectedOptionId by remember { mutableStateOf("B") }
+    val screenBackground = Brush.verticalGradient(listOf(LituturBgStart, LituturBgMid, LituturBgEnd))
 
-    val options = listOf(
-        QuizOption("A", "A", "Mengabaikannya dan terus berjalan santai"),
-        QuizOption("B", "B", "Memanjat dahan dengan hati-hati untuk menolongnya"),
-        QuizOption("C", "C", "Menyuruh hewan lain yang lebih kecil"),
-        QuizOption("D", "D", "Menertawakan burung pipit tersebut")
-    )
+    // Buku ini belum punya soal kuis
+    if (totalQuestions == 0) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(screenBackground)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Kuis belum tersedia 📝", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text("Cerita \"$bookTitle\" belum punya soal. Yuk baca cerita lainnya!", fontSize = 13.sp, color = LituturTextVariant)
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onBackClick,
+                colors = ButtonDefaults.buttonColors(containerColor = LituturPurple)
+            ) {
+                Text("Kembali", fontWeight = FontWeight.Bold)
+            }
+        }
+        return
+    }
+
+    // Soal sedang dimuat
+    if (question == null) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(screenBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = LituturPurple)
+        }
+        return
+    }
+
+    val isLastQuestion = questionIndex >= totalQuestions - 1
+    val canSubmit = selectedOptionId != null
 
     Scaffold(
         topBar = {
@@ -121,7 +158,7 @@ fun KuisPemahamanScreen(
                     ) {
                         Icon(Icons.Default.Quiz, contentDescription = null, tint = LituturPurpleDark, modifier = Modifier.size(18.dp))
                     }
-                    Text("Pertanyaan 2 dari 3", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                    Text("Pertanyaan ${questionIndex + 1} dari $totalQuestions", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                 }
 
                 Row(
@@ -133,14 +170,19 @@ fun KuisPemahamanScreen(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturGoldText, modifier = Modifier.size(16.dp))
-                    Text("+10 Poin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
+                    Text("Hingga +25 Poin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
                 }
             }
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(modifier = Modifier.weight(1f).height(12.dp).clip(RoundedCornerShape(50)).background(LituturPurpleDark))
-                Box(modifier = Modifier.weight(1f).height(12.dp).clip(RoundedCornerShape(50)).background(LituturPurple))
-                Box(modifier = Modifier.weight(1f).height(12.dp).clip(RoundedCornerShape(50)).background(LituturSurfaceVariant))
+                repeat(totalQuestions) { i ->
+                    val segmentColor = when {
+                        i < questionIndex -> LituturPurpleDark
+                        i == questionIndex -> LituturPurple
+                        else -> LituturSurfaceVariant
+                    }
+                    Box(modifier = Modifier.weight(1f).height(12.dp).clip(RoundedCornerShape(50)).background(segmentColor))
+                }
             }
 
             Card(
@@ -149,35 +191,37 @@ fun KuisPemahamanScreen(
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                    ) {
-                        AsyncImage(
-                            model = "https://lh3.googleusercontent.com/aida-public/AB6AXuDhvbfzD6pIZkNMTsOezV3_LzXyfx8TFzRS_tLmn16Mk5iU-bjElxciotT-mxoFYhiPwHlKUViexV5oUqJgrUhPmsqs_pB-tw5YoCAYweErVx7x8op3k0Y4Olr2BYaK4QZAvBt0mLTZl2uV_jarIeXhukLbb-YHfRWvTZIPxLwp8if26gztCpIwvp32gt6gJl8YPzYvFHemrxxq4uncOm9ARmeiGeNEhHdtxRP_aX68",
-                            contentDescription = "Leo berpikir",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                        Row(
+                    if (!illustrationUrl.isNullOrBlank()) {
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.White.copy(alpha = 0.9f))
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .fillMaxWidth()
+                                .height(140.dp)
+                                .clip(RoundedCornerShape(14.dp))
                         ) {
-                            Icon(Icons.Default.Lightbulb, contentDescription = null, tint = LituturPrimary, modifier = Modifier.size(14.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Fokus Membaca", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            AsyncImage(
+                                model = illustrationUrl,
+                                contentDescription = "Ilustrasi soal",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(8.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White.copy(alpha = 0.9f))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Lightbulb, contentDescription = null, tint = LituturPrimary, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Fokus Membaca", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            }
                         }
                     }
 
                     Text(
-                        "Apa yang dilakukan Leo ketika melihat burung pipit kecil kesulitan di atas pohon?",
+                        question.questionText,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         lineHeight = 24.sp,
@@ -187,7 +231,7 @@ fun KuisPemahamanScreen(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                options.forEach { opt ->
+                question.options.forEach { opt ->
                     val isSelected = selectedOptionId == opt.id
                     val bgColor = if (isSelected) LituturPurple else LituturSurfaceHigh
                     val shadowColor = if (isSelected) LituturPurpleDark else LituturSurfaceVariant
@@ -199,7 +243,7 @@ fun KuisPemahamanScreen(
                         shadowColor = shadowColor,
                         cornerRadius = 16.dp,
                         shadowDepth = 3.dp,
-                        onClick = { selectedOptionId = opt.id }
+                        onClick = { onOptionSelected(opt.id) }
                     ) {
                         Row(
                             modifier = Modifier
@@ -220,9 +264,9 @@ fun KuisPemahamanScreen(
                                         .background(if (isSelected) LituturPurpleDark else Color.White),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(opt.letter, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (isSelected) Color.White else LituturTertiary)
+                                    Text(opt.label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = if (isSelected) Color.White else LituturTertiary)
                                 }
-                                Text(opt.text, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, color = textColor)
+                                Text(opt.optionText, fontSize = 14.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, color = textColor)
                             }
 
                             if (isSelected) {
@@ -241,44 +285,41 @@ fun KuisPemahamanScreen(
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(LituturSurfaceHigh)
-                    .padding(12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.EmojiObjects, contentDescription = null, tint = LituturPrimaryContainer)
+            if (hint.isNotBlank()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(LituturSurfaceHigh)
+                        .padding(12.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.EmojiObjects, contentDescription = null, tint = LituturPrimaryContainer)
+                        }
+                        Text(
+                            "Petunjuk Ceria: $hint",
+                            fontSize = 12.sp,
+                            color = LituturTextDark,
+                            lineHeight = 16.sp
+                        )
                     }
-                    Text(
-                        "Petunjuk Ceria: Ingat pesan Leo tentang rasa peduli dan saling tolong-menolong!",
-                        fontSize = 12.sp,
-                        color = LituturTextDark,
-                        lineHeight = 16.sp
-                    )
                 }
             }
 
             TactileBox(
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = LituturPurple,
-                shadowColor = LituturPurpleDark,
+                backgroundColor = if (canSubmit) LituturPurple else LituturSurfaceVariant,
+                shadowColor = if (canSubmit) LituturPurpleDark else LituturSurfaceHigh,
                 cornerRadius = 16.dp,
                 shadowDepth = 4.dp,
-                onClick = {
-                    val isCorrect = selectedOptionId == "B"
-                    val score = if (isCorrect) 100 else 65
-                    val points = if (isCorrect) 25 else 10
-                    onQuizComplete(score, points)
-                }
+                onClick = { if (canSubmit) onSubmit() }
             ) {
                 Row(
                     modifier = Modifier
@@ -287,9 +328,14 @@ fun KuisPemahamanScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Periksa Jawaban & Lanjut", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(
+                        if (isLastQuestion) "Periksa Jawaban & Selesai" else "Periksa Jawaban & Lanjut",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (canSubmit) Color.White else LituturTextVariant
+                    )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Icon(Icons.Default.Stars, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Stars, contentDescription = null, tint = if (canSubmit) Color.White else LituturTextVariant, modifier = Modifier.size(20.dp))
                 }
             }
         }

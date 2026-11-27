@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.litutur.data.model.CeritaBukuModel
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.theme.*
 import kotlinx.coroutines.delay
@@ -30,18 +31,42 @@ import kotlinx.coroutines.delay
 @Composable
 fun BacaCeritaScreen(
     bookTitle: String = "Singa yang Baik Hati",
+    book: CeritaBukuModel? = null,
+    chapterIndex: Int = 0,
     onBackClick: () -> Unit = {},
+    onPreviousChapter: () -> Unit = {},
     onNextChapter: () -> Unit = {}
 ) {
-    var showVocabTooltip by remember { mutableStateOf(false) }
+    // Reset tooltip kosakata setiap kali pindah bab
+    var showVocabTooltip by remember(chapterIndex) { mutableStateOf(false) }
     var showRoarEffect by remember { mutableStateOf(false) }
     var isAudioPlaying by remember { mutableStateOf(true) }
+
+    val chapters = book?.chapters.orEmpty()
+    val totalChapters = chapters.size
+    val chapter = chapters.getOrNull(chapterIndex)
+    val isLastChapter = chapterIndex >= totalChapters - 1
+    val vocabWord = chapter?.vocabWord?.takeIf { it.isNotBlank() }
+    val vocabMeaning = chapter?.vocabMeaning.orEmpty()
 
     LaunchedEffect(showRoarEffect) {
         if (showRoarEffect) {
             delay(1200)
             showRoarEffect = false
         }
+    }
+
+    // Buku belum selesai dimuat (atau judul belum cocok): tampilkan loading
+    if (chapter == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(LituturBgStart, LituturBgMid, LituturBgEnd))),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = LituturPurple)
+        }
+        return
     }
 
     Scaffold(
@@ -115,8 +140,8 @@ fun BacaCeritaScreen(
                     .background(LituturSurfaceHigh)
             ) {
                 AsyncImage(
-                    model = "https://lh3.googleusercontent.com/aida-public/AB6AXuB6FTTn9EFp03Fep4lQx-iorVyxZPV9mghlg2RxxulF34oiHI4Y0dJ_rwZmp5yHq3xJQeTvGfCVNYzt0w0MTlsEcBeqP5MVVhCBO-Wa-dXPY8YGy7m4nK6WUzM3zNz2Q7AfXrfWQ_U9btLw8W6o-dQePn4CqB4oXa5Oi69_2y_JO6fF3_hS5jyJFmIRv4xZwJvg-vwZrJILqTbZ7el8em5U0F87yKY0LGVqnbxxzK1S",
-                    contentDescription = "Leo si Singa dan Burung",
+                    model = chapter.illustrationUrl.ifBlank { book?.coverUrl.orEmpty() },
+                    contentDescription = chapter.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -148,7 +173,7 @@ fun BacaCeritaScreen(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(Icons.Default.AutoStories, contentDescription = null, tint = LituturPrimary, modifier = Modifier.size(16.dp))
-                        Text("Bab 2 dari 5", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Text("Bab ${chapterIndex + 1} dari $totalChapters", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                     }
 
                     Row(
@@ -176,7 +201,7 @@ fun BacaCeritaScreen(
                             .background(LituturPrimary)
                             .padding(horizontal = 20.dp, vertical = 12.dp)
                     ) {
-                        Text("RAWRRR! 🦁✨", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text("Hore! ✨", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -194,7 +219,7 @@ fun BacaCeritaScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(Icons.Default.Pets, contentDescription = null, tint = LituturPrimaryContainer, modifier = Modifier.size(16.dp))
-                        Text("Ketuk Leo untuk aumannya! 🐾", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Text("Ketuk gambar untuk kejutan! 🐾", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                     }
                 }
             }
@@ -219,81 +244,69 @@ fun BacaCeritaScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(14.dp)
-                                    .clip(CircleShape)
-                                    .background(LituturSecondaryDim),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .clip(CircleShape)
-                                    .background(LituturPrimaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                            }
-                            repeat(3) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .clip(CircleShape)
-                                        .background(LituturSurfaceVariant)
-                                )
+                            repeat(totalChapters) { i ->
+                                when {
+                                    i < chapterIndex -> Box(
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clip(CircleShape)
+                                            .background(LituturSecondaryDim),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
+                                    }
+
+                                    i == chapterIndex -> Box(
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                            .clip(CircleShape)
+                                            .background(LituturPrimaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                    }
+
+                                    else -> Box(
+                                        modifier = Modifier
+                                            .size(10.dp)
+                                            .clip(CircleShape)
+                                            .background(LituturSurfaceVariant)
+                                    )
+                                }
                             }
                         }
                     }
 
                     Text(
-                        text = "Meskipun tubuhnya paling besar di antara teman-temannya, Leo tidak pernah sombong. Ketika mendengar cicitan cemas sang burung pipit, ",
+                        text = chapter.title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = LituturPurpleDark
+                    )
+
+                    Text(
+                        text = chapter.textContent,
                         fontSize = 17.sp,
                         lineHeight = 28.sp,
                         color = LituturTextDark
                     )
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = "Leo segera melompat",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = LituturSecondary,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(LituturSecondaryContainer)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-
-                        Text(" ke ", fontSize = 17.sp, color = LituturTextDark)
-
+                    if (vocabWord != null) {
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
                                 .background(LituturTertiaryFixed)
                                 .clickable { showVocabTooltip = !showVocabTooltip }
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(Icons.Default.MenuBook, contentDescription = null, tint = LituturTertiary, modifier = Modifier.size(14.dp))
-                            Text("[Dahan Pohon]", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = LituturTertiary)
+                            Text("[$vocabWord]", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = LituturTertiary)
                         }
                     }
 
-                    Text(
-                        text = "untuk membantunya lepas dengan selamat.",
-                        fontSize = 17.sp,
-                        lineHeight = 28.sp,
-                        color = LituturTextDark
-                    )
-
-                    androidx.compose.animation.AnimatedVisibility(visible = showVocabTooltip) {
+                    androidx.compose.animation.AnimatedVisibility(visible = showVocabTooltip && vocabWord != null) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = LituturSurfaceHigh),
@@ -310,7 +323,7 @@ fun BacaCeritaScreen(
                                 ) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                         Icon(Icons.Default.Lightbulb, contentDescription = null, tint = LituturTertiary)
-                                        Text("Kamus Cilik: Dahan Pohon", fontWeight = FontWeight.Bold, color = LituturTertiary)
+                                        Text("Kamus Cilik: ${vocabWord.orEmpty()}", fontWeight = FontWeight.Bold, color = LituturTertiary)
                                     }
                                     IconButton(
                                         onClick = { showVocabTooltip = false },
@@ -321,7 +334,7 @@ fun BacaCeritaScreen(
                                 }
 
                                 Text(
-                                    "Cabang kayu tempat daun, bunga, dan buah-buahan tumbuh di pohon rindang.",
+                                    vocabMeaning,
                                     fontSize = 13.sp,
                                     color = LituturTextDark
                                 )
@@ -352,7 +365,7 @@ fun BacaCeritaScreen(
                     shadowColor = LituturSurfaceVariant,
                     cornerRadius = 16.dp,
                     shadowDepth = 4.dp,
-                    onClick = onBackClick
+                    onClick = onPreviousChapter
                 ) {
                     Row(
                         modifier = Modifier
@@ -382,7 +395,7 @@ fun BacaCeritaScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Lanjut Cerita", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(if (isLastChapter) "Mulai Kuis" else "Lanjut Cerita", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                     }

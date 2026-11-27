@@ -21,8 +21,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.litutur.data.model.StikerModel
+import com.example.litutur.data.remote.LituturAssets
 import com.example.litutur.ui.components.TactileBox
+import com.example.litutur.ui.components.rememberAssetUrl
 import com.example.litutur.ui.theme.*
+import com.example.litutur.ui.viewmodel.QuizSaveStatus
 
 @Composable
 fun KuisSelesaiScreen(
@@ -30,6 +34,13 @@ fun KuisSelesaiScreen(
     bookTitle: String = "Singa yang Baik Hati",
     quizScore: Int = 100,
     earnedPoints: Int = 25,
+    correctAnswers: Int = 0,
+    totalQuestions: Int = 0,
+    durationSeconds: Int = 0,
+    totalPoints: Int = 0,
+    newlyUnlockedStickers: List<StikerModel> = emptyList(),
+    nextLockedSticker: StikerModel? = null,
+    saveStatus: QuizSaveStatus = QuizSaveStatus.IDLE,
     onClaimReward: () -> Unit = {},
     onReadMoreBooks: () -> Unit = {}
 ) {
@@ -75,7 +86,7 @@ fun KuisSelesaiScreen(
                         .background(LituturLightPurple.copy(alpha = 0.6f))
                 )
                 AsyncImage(
-                    model = "https://lh3.googleusercontent.com/aida-public/AB6AXuBe4n2jzIROOHNosEZFY_unI3-bEkGGM1RYeJrf0VY8DWBhCGEL_e-VOkYCk9MemXubxJZFcAGES695VbeiLp1i_eY8Sz_WlpFUQH_MGY2MhwBVnYvF-1Bqaji-p3-OMAQRSd3ybEEW57chUqjG49qVqrTtpP2_OHuEbi9nFBQaYvi7ly9SRqdwuqPb5xas42-pV95RrnkkhoUZbCKpHqpJngGeo6X44Tnbztyl1RES",
+                    model = rememberAssetUrl(LituturAssets.KUIS_SELESAI_TROPHY.sourceUrl),
                     contentDescription = "Maskot & Trofi Emas",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit
@@ -124,12 +135,13 @@ fun KuisSelesaiScreen(
                     ) {
                         Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturGoldText, modifier = Modifier.size(28.dp))
                     }
-                    Column {
-                        Text("+15 Koin Emas Baru! 🪙", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("+$earnedPoints Koin Emas Baru! 🪙", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("Total Tabungan:", fontSize = 12.sp, color = LituturTextVariant)
-                            Text("135 Poin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturPurpleDark)
+                            Text("$totalPoints Koin", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturPurpleDark)
                         }
+                        SaveStatusLabel(saveStatus)
                     }
                 }
             }
@@ -150,8 +162,8 @@ fun KuisSelesaiScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Hasil Kuis: 3/3 Benar", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                        Text("100% Sempurna! ⭐", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
+                        Text("Hasil Kuis: $correctAnswers/$totalQuestions Benar", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Text("$quizScore% ${scoreLabel(quizScore)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
                     }
 
                     Row(
@@ -159,7 +171,7 @@ fun KuisSelesaiScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Waktu Selesai:", fontSize = 13.sp, color = LituturTextVariant)
-                        Text("3 Menit 20 Detik", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        Text(formatDuration(durationSeconds), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                     }
 
                     Row(
@@ -172,7 +184,14 @@ fun KuisSelesaiScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(Icons.Default.Pets, contentDescription = null, tint = LituturPurpleDark)
-                        Text("Lencana Sahabat Hewan 🦁 Terbuka!", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                        val stickerText = when {
+                            newlyUnlockedStickers.isNotEmpty() ->
+                                "Stiker ${newlyUnlockedStickers.joinToString(", ") { it.name }} Terbuka! 🎉"
+                            nextLockedSticker != null ->
+                                "Stiker berikutnya: ${nextLockedSticker.name} • ${nextLockedSticker.unlockCriteria}"
+                            else -> "Semua stiker sudah terkumpul! 🏆"
+                        }
+                        Text(stickerText, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                     }
                 }
             }
@@ -221,5 +240,34 @@ fun KuisSelesaiScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SaveStatusLabel(status: QuizSaveStatus) {
+    val (text, color) = when (status) {
+        QuizSaveStatus.SAVING -> "Menyimpan progres..." to LituturTextVariant
+        QuizSaveStatus.SAVED -> "Progres tersimpan ✓" to LituturSecondary
+        QuizSaveStatus.LOCAL_ONLY -> "Mode tamu: progres tidak disimpan ke akun" to LituturTextVariant
+        QuizSaveStatus.FAILED -> "Gagal menyimpan progres, cek koneksi" to Color(0xFFB3261E)
+        QuizSaveStatus.IDLE -> return
+    }
+    Text(text, fontSize = 11.sp, color = color)
+}
+
+private fun scoreLabel(score: Int): String = when {
+    score >= 100 -> "Sempurna! ⭐"
+    score >= 70 -> "Hebat! 👍"
+    else -> "Terus Berlatih! 💪"
+}
+
+private fun formatDuration(totalSeconds: Int): String {
+    if (totalSeconds <= 0) return "-"
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return when {
+        minutes == 0 -> "$seconds Detik"
+        seconds == 0 -> "$minutes Menit"
+        else -> "$minutes Menit $seconds Detik"
     }
 }

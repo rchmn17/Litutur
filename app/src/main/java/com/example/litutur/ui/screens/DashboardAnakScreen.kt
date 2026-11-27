@@ -22,69 +22,51 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.litutur.data.model.CeritaBukuModel
+import com.example.litutur.data.model.StikerModel
+import com.example.litutur.data.repository.TreeGrowthData
+import com.example.litutur.data.remote.LituturAssets
 import com.example.litutur.ui.components.TactileBox
+import com.example.litutur.ui.components.rememberAssetUrl
 import com.example.litutur.ui.theme.*
 
-data class CeritaBuku(
-    val title: String,
-    val imageUrl: String,
-    val badgeText: String?,
-    val badgeColor: Color,
-    val level: String,
-    val rating: String,
-    val duration: String
-)
+/** Emoji hiasan untuk chip kategori (nama kategori asli tetap dari data). */
+private fun categoryChipLabel(category: String): String = when (category) {
+    "Fabel" -> "🦁 Fabel"
+    "Petualangan" -> "🚀 Petualangan"
+    "Dongeng" -> "🧚 Dongeng"
+    "Sains" -> "🔬 Sains"
+    "Favoritku" -> "❤️ Favoritku"
+    else -> category
+}
 
 @Composable
 fun DashboardAnakScreen(
     childName: String = "Budi",
     childPoints: Int = 120,
+    books: List<CeritaBukuModel> = emptyList(),
+    categories: List<String> = listOf("Semua Cerita"),
+    selectedCategoryIndex: Int = 0,
+    isLoading: Boolean = false,
+    treeGrowth: TreeGrowthData = TreeGrowthData(1, "Tunas Kecil 🌱", 0.5f, 25, "Bibit Hijau"),
+    stickers: List<StikerModel> = emptyList(),
+    dailyMissionProgress: Int = 0,
+    dailyMissionTarget: Int = 2,
+    dailyMissionReward: Int = 20,
+    isDailyMissionClaimed: Boolean = false,
+    onClaimDailyMission: () -> Unit = {},
+    onCategorySelected: (Int) -> Unit = {},
     onRequestParentMode: () -> Unit = {},
     onNavigateToRead: (String) -> Unit = {},
     onBottomTabSelected: (Int) -> Unit = {}
 ) {
-    var selectedCategory by remember { mutableStateOf(0) }
-    val categories = listOf("Semua Cerita", "🦁 Fabel", "🚀 Petualangan", "🧚 Dongeng", "🔬 Sains")
-
-    val bookList = remember {
-        listOf(
-            CeritaBuku(
-                title = "Singa yang Baik Hati",
-                imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAMnMXGf4IqB7Jm1Mq5egbAeEzKw_3XEnU30CfUV6WJFXOJegHqG1pCBDvzUrsQviuBFBXsVOtzjUpLtdleUkJQJSC6W4Yk570CAyj2iMiGbehUIkvINUVJk0buCcILXZ_fzTna8ujwJ0D0j_hjbVrMoq5mf7gopBNI3GhsnW9e_1BvxCGZmRCGn4HybVWI4MlaYGIyI9KmZ1vvOTA9kZHYQLOUK3GRNj2HdAaxDYoY",
-                badgeText = "Favorit",
-                badgeColor = LituturPrimaryContainer,
-                level = "Level 2",
-                rating = "4.9",
-                duration = "8 mnt"
-            ),
-            CeritaBuku(
-                title = "Kelinci & Kura-kura",
-                imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAStevGosNmGTg0TQxsaYPJXmARrMwDYBIrrB_f94250v5rjLoEcd0DXH31qRrBIv6g3k1ER9ZuJ9BQW_LfnwTNLAG-Soau0YHDjb-wywx8u35cylLK5NfWuhXP6UoCgRhDU7eWrHKQ-0Mr0xs1F2AvEMVaVC-oKbjcI0skimC-gIcJvNheshm8exfB22aCyrCxR3TTScmZRcD7pcYhkKqDucX67vRGwEH563uK-qOQ",
-                badgeText = "Baru",
-                badgeColor = LituturSecondaryContainer,
-                level = "Level 1",
-                rating = "4.8",
-                duration = "5 mnt"
-            ),
-            CeritaBuku(
-                title = "Misteri Bintang Kejora",
-                imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCG-kdAJnekprDeOPX75fLVJ87g-yL76mMQQiqPzifUrSSm2RWFM8Q2PBL_-UfQ9Kfx5iZzu_JhCfY9Xpov-CQNKWPVCUItvOTqh_UUjdvWvaQA_eOMX1Xgi6_tM9qCu5Hun3jrlTUa10bI_QN9K1w_enTh87lDVNA62VMDqzLYM72SRm8LN43HdaHa-1WO0YfA5RYQsml6ZnPSL6N_hSoGU-3IuhtIeckyCgcPQIc1",
-                badgeText = null,
-                badgeColor = Color.Transparent,
-                level = "Level 2",
-                rating = "5.0",
-                duration = "10 mnt"
-            ),
-            CeritaBuku(
-                title = "Petualangan Si Kancil",
-                imageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuCzVO_A2s58Q39eTvzKo-EIiCxyW0FTpp2R7COJUQMfo1t5hvgNtvq1ubSitCjq4tP7xbVy3Oi-cbq0B9xK8Y48YSbBbXf23FnDbl5fIQB0588aA6HsKxQjUKCRLi99KM0qAIuAK-9tfNYCW5iUMTLsX8qyNEwMNLWiD8NPkoT8zbDmuGRkfJeb83fI_n_Im5faCOW13KzdWMTcYM3buhBqefvAGWRa05-rLlG8alJq",
-                badgeText = null,
-                badgeColor = Color.Transparent,
-                level = "Level 3",
-                rating = "4.9",
-                duration = "7 mnt"
-            )
-        )
+    val unlockedStickers = stickers.count { it.isUnlocked }
+    val missionDone = dailyMissionProgress.coerceAtMost(dailyMissionTarget)
+    val missionClaimable = !isDailyMissionClaimed && dailyMissionProgress >= dailyMissionTarget
+    val missionSubtitle = when {
+        isDailyMissionClaimed -> "Misi selesai! Hebat sekali 🎉"
+        missionClaimable -> "Misi tercapai! Ketuk untuk klaim hadiah 🎁"
+        else -> "Baca ${dailyMissionTarget - dailyMissionProgress} cerita lagi yuk! ($missionDone/$dailyMissionTarget)"
     }
 
     Scaffold(
@@ -99,6 +81,9 @@ fun DashboardAnakScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .padding(end = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -113,7 +98,14 @@ fun DashboardAnakScreen(
                         }
                         Column {
                             Text("LITUTUR ANAK", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturOutline)
-                            Text("Halo, $childName! 🌟", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Text(
+                                "Halo, $childName! 🌟",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LituturTextDark,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
 
@@ -121,16 +113,25 @@ fun DashboardAnakScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(LituturSurfaceHigh)
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = LituturSurfaceHigh
                         ) {
-                            Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("$childPoints Poin", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Filled.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(18.dp))
+                                Text(
+                                    "$childPoints Poin",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = LituturTextDark,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                         IconButton(
                             onClick = onRequestParentMode,
@@ -156,7 +157,6 @@ fun DashboardAnakScreen(
                 )
                 NavigationBarItem(selected = false, onClick = { onBottomTabSelected(1) }, icon = { Icon(Icons.Default.Park, null) }, label = { Text("Pohon Kisah") })
                 NavigationBarItem(selected = false, onClick = { onBottomTabSelected(2) }, icon = { Icon(Icons.Default.Stars, null) }, label = { Text("Album") })
-                NavigationBarItem(selected = false, onClick = { onBottomTabSelected(3) }, icon = { Icon(Icons.Default.MilitaryTech, null) }, label = { Text("Prestasi") })
             }
         }
     ) { innerPadding ->
@@ -198,7 +198,7 @@ fun DashboardAnakScreen(
                     }
 
                     AsyncImage(
-                        model = "https://lh3.googleusercontent.com/aida-public/AB6AXuBlZm93mKuue9mdTbnk8VDHYRFeeAWVUDUd9aKstzHy1Q7yIa5bCaETgeRTbyT28amYwl-_U8I4Rwrzp8QFpNwAQiDWQ79HVjj2KaVj3lnBLd74r50Rq41Gi5YD4CS7aGgJyGT3azocFD8WTJY2u63rhWldFqjMNiSbuesHAUDvjEApFe-YEoy2qJJCCykVWF1wKW1mCxWNMVeZsmiqus4k04PqeZZTVCc-210SdBMY",
+                        model = rememberAssetUrl(LituturAssets.DASHBOARD_MASCOT.sourceUrl),
                         contentDescription = "Mascot Anak",
                         modifier = Modifier.size(90.dp),
                         contentScale = ContentScale.Fit
@@ -228,11 +228,11 @@ fun DashboardAnakScreen(
                             ) {
                                 Icon(Icons.Default.Park, contentDescription = null, tint = LituturSecondary)
                             }
-                            Text("Level 3", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturSecondary)
+                            Text("Tahap ${treeGrowth.stage}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturSecondary)
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text("Pohon Kisahku 🌳", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                        Text("Siap Disiram! 💧", fontSize = 12.sp, color = LituturTextVariant)
+                        Text(treeGrowth.stageLabel, fontSize = 12.sp, color = LituturTextVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
 
@@ -257,19 +257,20 @@ fun DashboardAnakScreen(
                             ) {
                                 Icon(Icons.Default.Stars, contentDescription = null, tint = LituturTertiary)
                             }
-                            Text("⭐ 8/20", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturTertiary)
+                            Text("⭐ $unlockedStickers/${stickers.size}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturTertiary)
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text("Album Stiker ⭐", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                        Text("Terkumpul 8", fontSize = 12.sp, color = LituturTextVariant)
+                        Text("Terkumpul $unlockedStickers", fontSize = 12.sp, color = LituturTextVariant)
                     }
                 }
             }
 
             TactileBox(
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = Color.White,
-                shadowColor = LituturSurfaceVariant
+                backgroundColor = if (missionClaimable) LituturSecondaryContainer else Color.White,
+                shadowColor = if (missionClaimable) LituturSecondaryDim else LituturSurfaceVariant,
+                onClick = onClaimDailyMission
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
@@ -289,25 +290,39 @@ fun DashboardAnakScreen(
                             }
                             Column {
                                 Text("Misi Hari Ini", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
-                                Text("Baca 1 cerita lagi yuk!", fontSize = 12.sp, color = LituturTextVariant)
+                                Text(missionSubtitle, fontSize = 12.sp, color = LituturTextVariant)
                             }
                         }
 
                         Row(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
-                                .background(LituturSecondaryContainer)
+                                .background(if (missionClaimable) Color.White else LituturSecondaryContainer)
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(14.dp))
+                            Icon(
+                                if (isDailyMissionClaimed) Icons.Default.CheckCircle else Icons.Default.MonetizationOn,
+                                contentDescription = null,
+                                tint = LituturSecondary,
+                                modifier = Modifier.size(14.dp)
+                            )
                             Spacer(modifier = Modifier.width(2.dp))
-                            Text("+20 Poin", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturSecondary)
+                            Text(
+                                when {
+                                    isDailyMissionClaimed -> "Diklaim"
+                                    missionClaimable -> "Klaim +$dailyMissionReward"
+                                    else -> "+$dailyMissionReward Poin"
+                                },
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = LituturSecondary
+                            )
                         }
                     }
 
                     LinearProgressIndicator(
-                        progress = { 0.5f },
+                        progress = { missionDone.toFloat() / dailyMissionTarget.coerceAtLeast(1).toFloat() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)
@@ -325,16 +340,16 @@ fun DashboardAnakScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 categories.forEachIndexed { index, cat ->
-                    val isSelected = selectedCategory == index
+                    val isSelected = selectedCategoryIndex == index
                     TactileBox(
                         backgroundColor = if (isSelected) LituturPurple else Color.White,
                         shadowColor = if (isSelected) LituturPurpleDark else LituturSurfaceVariant,
                         cornerRadius = 50.dp,
                         shadowDepth = 3.dp,
-                        onClick = { selectedCategory = index }
+                        onClick = { onCategorySelected(index) }
                     ) {
                         Text(
-                            text = cat,
+                            text = categoryChipLabel(cat),
                             color = if (isSelected) Color.White else LituturTextVariant,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
@@ -344,15 +359,39 @@ fun DashboardAnakScreen(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                for (chunk in bookList.chunked(2)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            when {
+                isLoading && books.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        for (book in chunk) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                BookCardItem(book = book, onReadClick = { onNavigateToRead(book.title) })
+                        CircularProgressIndicator(color = LituturPurple)
+                    }
+                }
+
+                books.isEmpty() -> {
+                    Text(
+                        "Belum ada cerita di kategori ini. Coba kategori lain ya! 📚",
+                        fontSize = 13.sp,
+                        color = LituturTextVariant,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp)
+                    )
+                }
+
+                else -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        for (chunk in books.chunked(2)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                for (book in chunk) {
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        BookCardItem(book = book, onReadClick = { onNavigateToRead(book.title) })
+                                    }
+                                }
+                                // Jaga lebar kartu tetap sama bila baris terakhir hanya berisi 1 buku
+                                if (chunk.size == 1) Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }
@@ -363,7 +402,12 @@ fun DashboardAnakScreen(
 }
 
 @Composable
-fun BookCardItem(book: CeritaBuku, onReadClick: () -> Unit) {
+fun BookCardItem(book: CeritaBukuModel, onReadClick: () -> Unit) {
+    val badgeColor = when (book.badgeText) {
+        "Favorit" -> LituturPrimaryContainer
+        "Baru" -> LituturSecondaryContainer
+        else -> LituturPrimaryContainer
+    }
     TactileBox(
         modifier = Modifier.fillMaxWidth(),
         backgroundColor = Color.White,
@@ -374,12 +418,12 @@ fun BookCardItem(book: CeritaBuku, onReadClick: () -> Unit) {
         Column {
             Box(modifier = Modifier.fillMaxWidth().height(130.dp)) {
                 AsyncImage(
-                    model = book.imageUrl,
+                    model = book.coverUrl,
                     contentDescription = book.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                if (book.badgeText != null) {
+                if (!book.badgeText.isNullOrBlank()) {
                     Text(
                         text = book.badgeText,
                         color = Color.White,
@@ -389,7 +433,7 @@ fun BookCardItem(book: CeritaBuku, onReadClick: () -> Unit) {
                             .padding(8.dp)
                             .align(Alignment.TopStart)
                             .clip(RoundedCornerShape(50))
-                            .background(book.badgeColor)
+                            .background(badgeColor)
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
@@ -412,7 +456,7 @@ fun BookCardItem(book: CeritaBuku, onReadClick: () -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("★ ${book.rating}", fontSize = 11.sp, color = LituturPrimaryContainer, fontWeight = FontWeight.Bold)
                     Text("•", fontSize = 11.sp, color = LituturOutline)
-                    Text(book.duration, fontSize = 11.sp, color = LituturTextVariant)
+                    Text("${book.durationMinutes} mnt", fontSize = 11.sp, color = LituturTextVariant)
                 }
 
                 TactileBox(

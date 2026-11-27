@@ -1,6 +1,7 @@
 package com.example.litutur.ui.navigation
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
@@ -27,6 +28,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.litutur.data.model.ChildProfileEntity
+import com.example.litutur.data.model.ReadingLogEntity
+import com.example.litutur.data.repository.CloudinaryAssetSync
 import com.example.litutur.ui.model.LituturScreen
 import com.example.litutur.ui.parent.ParentMainScreen
 import com.example.litutur.ui.parent.ParentPinDialog
@@ -44,6 +48,8 @@ import com.example.litutur.ui.screens.PohonKisahScreen
 import com.example.litutur.ui.screens.PostDetailScreen
 import com.example.litutur.ui.screens.SplashWelcomeScreen
 import com.example.litutur.ui.viewmodel.AuthViewModel
+import com.example.litutur.ui.viewmodel.ChildRewards
+import com.example.litutur.ui.viewmodel.ChildViewModel
 import com.example.litutur.ui.viewmodel.ParentUiState
 import com.example.litutur.ui.viewmodel.ParentViewModel
 
@@ -66,16 +72,43 @@ sealed class Screen(val route: String) {
 @Composable
 fun LituturAppNavigation(
     parentState: ParentUiState = ParentUiState(),
-    onQuizCompleted: (bookTitle: String, quizScore: Int, pointsEarned: Int) -> Unit = { _, _, _ -> },
+    onQuizCompleted: (log: ReadingLogEntity, pointsEarned: Int) -> Unit = { _, _ -> },
+    onSyncChildProgress: (child: ChildProfileEntity, logs: List<ReadingLogEntity>) -> Unit = { _, _ -> },
     onReturnToParentMode: () -> Unit = {},
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    childViewModel: ChildViewModel = viewModel()
 ) {
     var showPinDialog by remember { mutableStateOf(false) }
+    val childState by childViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    val childName = parentState.selectedChild?.name?.ifBlank { "Sahabat Kecil" } ?: "Sahabat Kecil"
-    val childPoints = parentState.selectedChild?.points ?: 0
-    val storiesCount = parentState.readingLogs.size
+    val selectedChild = parentState.selectedChild
+    val parentUid = parentState.parentUser?.uid?.takeIf { it.isNotBlank() }
     val expectedPin = parentState.parentUser?.parentPin?.ifBlank { "1234" } ?: "1234"
+
+    // Hubungkan Mode Anak ke Firestore: listener real-time profil anak + riwayat baca.
+    // Poin, Pohon Kisah, Album Stiker & urutan buku otomatis mengikuti data terbaru.
+    LaunchedEffect(parentUid, selectedChild?.id) {
+        childViewModel.bindChild(
+            uid = parentUid,
+            child = selectedChild,
+            fallbackLogs = parentState.readingLogs
+        )
+    }
+
+    // Data tampilan diambil dari ChildViewModel (real-time), dengan cadangan dari Mode Orang Tua
+    val activeChild = childState.childProfile ?: selectedChild
+    val childName = activeChild?.name?.ifBlank { "Sahabat Kecil" } ?: "Sahabat Kecil"
+    val childPoints = activeChild?.points ?: 0
+    val storiesCount = childState.storiesCount
+
+    // Pesan singkat dari aksi anak (siram pohon, klaim misi, favorit, kotak stiker)
+    LaunchedEffect(childState.childMessage) {
+        childState.childMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            childViewModel.consumeMessage()
+        }
+    }
 
     if (showPinDialog) {
         ParentPinDialog(
@@ -83,6 +116,10 @@ fun LituturAppNavigation(
             onDismiss = { showPinDialog = false },
             onSuccess = {
                 showPinDialog = false
+                // Bawa progres terbaru Mode Anak (poin, siram, favorit, stiker) ke Mode Orang Tua
+                childViewModel.uiState.value.childProfile?.let { child ->
+                    onSyncChildProgress(child, childViewModel.uiState.value.readingLogs)
+                }
                 onReturnToParentMode()
             }
         )
@@ -90,15 +127,25 @@ fun LituturAppNavigation(
 
     fun navigateChildTab(tab: Int) {
         val targetRoute = when (tab) {
-            0 -> Screen.Dashboard.route
             1 -> Screen.StoryTree.route
-            2, 3 -> Screen.StickerAlbum.route
+            2 -> Screen.StickerAlbum.route
             else -> Screen.Dashboard.route
         }
+        if (targetRoute == Screen.Dashboard.route) {
+            // Beranda: cukup kembali ke Dashboard yang ada di back stack.
+            // (Sebelumnya saveState/restoreState membuat Navigation memulihkan tab lain
+            //  yang tersimpan atas nama Dashboard, sehingga tombol Beranda tampak tidak bekerja.)
+            if (!navController.popBackStack(Screen.Dashboard.route, inclusive = false)) {
+                navController.navigate(Screen.Dashboard.route) {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            return
+        }
         navController.navigate(targetRoute) {
-            popUpTo(Screen.Dashboard.route) { saveState = true }
+            popUpTo(Screen.Dashboard.route) { inclusive = false }
             launchSingleTop = true
-            restoreState = true
         }
     }
 
@@ -117,8 +164,21 @@ fun LituturAppNavigation(
             DashboardAnakScreen(
                 childName = childName,
                 childPoints = childPoints,
+                books = childState.displayedBooks,
+                categories = childState.categories,
+                selectedCategoryIndex = childState.selectedCategoryIndex,
+                isLoading = childState.isLoading,
+                treeGrowth = childState.treeGrowth,
+                stickers = childState.stickers,
+                dailyMissionProgress = childState.storiesReadToday,
+                dailyMissionTarget = ChildRewards.DAILY_MISSION_TARGET,
+                dailyMissionReward = ChildRewards.DAILY_MISSION_POINTS,
+                isDailyMissionClaimed = childState.isDailyMissionClaimed,
+                onClaimDailyMission = { childViewModel.claimDailyMission(parentUid) },
+                onCategorySelected = { childViewModel.selectCategory(it) },
                 onRequestParentMode = { showPinDialog = true },
                 onNavigateToRead = { title ->
+                    childViewModel.selectBookForReading(title)
                     navController.navigate(Screen.BookDetail.createRoute(title))
                 },
                 onBottomTabSelected = { tab -> navigateChildTab(tab) }
@@ -128,47 +188,118 @@ fun LituturAppNavigation(
         composable(Screen.BookDetail.route) { backStackEntry ->
             val rawTitle = backStackEntry.arguments?.getString("title") ?: "Singa yang Baik Hati"
             val bookTitle = Uri.decode(rawTitle)
+            LaunchedEffect(bookTitle) {
+                if (childViewModel.uiState.value.currentBook?.title?.equals(bookTitle, ignoreCase = true) != true) {
+                    childViewModel.selectBookForReading(bookTitle)
+                }
+            }
+            val detailBook = childState.currentBook?.takeIf { it.title.equals(bookTitle, ignoreCase = true) }
+
             DetailBukuScreen(
                 bookTitle = bookTitle,
+                book = detailBook,
+                isFavorite = detailBook != null &&
+                    detailBook.id.ifBlank { detailBook.title } in childState.favoriteBookIds,
+                onToggleFavorite = { childViewModel.toggleFavorite(parentUid, detailBook) },
                 onBackClick = { navController.popBackStack() },
-                onStartReading = { navController.navigate(Screen.Reading.createRoute(bookTitle)) }
+                onStartReading = {
+                    // Mulai dari bab 1 & kuis baru setiap kali tombol mulai ditekan
+                    childViewModel.selectBookForReading(bookTitle)
+                    navController.navigate(Screen.Reading.createRoute(bookTitle))
+                }
             )
         }
 
         composable(Screen.Reading.route) { backStackEntry ->
             val rawTitle = backStackEntry.arguments?.getString("title") ?: "Singa yang Baik Hati"
             val bookTitle = Uri.decode(rawTitle)
+            // Jaga-jaga bila layar dibuka tanpa lewat Dashboard (mis. proses dipulihkan)
+            LaunchedEffect(bookTitle) {
+                if (childViewModel.uiState.value.currentBook?.title?.equals(bookTitle, ignoreCase = true) != true) {
+                    childViewModel.selectBookForReading(bookTitle)
+                }
+            }
+            val readingBook = childState.currentBook?.takeIf { it.title.equals(bookTitle, ignoreCase = true) }
+
             BacaCeritaScreen(
                 bookTitle = bookTitle,
+                book = readingBook,
+                chapterIndex = childState.currentChapterIndex,
                 onBackClick = { navController.popBackStack() },
-                onNextChapter = { navController.navigate(Screen.Quiz.createRoute(bookTitle)) }
+                onPreviousChapter = {
+                    if (!childViewModel.previousChapter()) navController.popBackStack()
+                },
+                onNextChapter = {
+                    // Bab terakhir -> lanjut ke kuis
+                    if (!childViewModel.nextChapter()) {
+                        navController.navigate(Screen.Quiz.createRoute(bookTitle))
+                    }
+                }
             )
         }
 
         composable(Screen.Quiz.route) { backStackEntry ->
             val rawTitle = backStackEntry.arguments?.getString("title") ?: "Singa yang Baik Hati"
             val bookTitle = Uri.decode(rawTitle)
-            KuisPemahamanScreen(
-                bookTitle = bookTitle,
-                onBackClick = { navController.popBackStack() },
-                onQuizComplete = { score, points ->
-                    onQuizCompleted(bookTitle, score, points)
-                    navController.navigate(Screen.QuizComplete.route) {
-                        popUpTo(Screen.BookDetail.route) { inclusive = true }
-                    }
+            LaunchedEffect(bookTitle) {
+                if (childViewModel.uiState.value.currentBook?.title?.equals(bookTitle, ignoreCase = true) != true) {
+                    childViewModel.selectBookForReading(bookTitle)
                 }
-            )
+            }
+            val quizBook = childState.currentBook?.takeIf { it.title.equals(bookTitle, ignoreCase = true) }
+
+            if (quizBook == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                val question = childState.quizQuestions.getOrNull(childState.currentQuestionIndex)
+                KuisPemahamanScreen(
+                    bookTitle = bookTitle,
+                    question = question,
+                    questionIndex = childState.currentQuestionIndex,
+                    totalQuestions = childState.quizQuestions.size,
+                    selectedOptionId = childState.selectedAnswerId,
+                    illustrationUrl = question?.illustrationUrl?.takeIf { it.isNotBlank() }
+                        ?: quizBook.chapters.firstOrNull()?.illustrationUrl?.takeIf { it.isNotBlank() },
+                    hint = quizBook.moralCerita,
+                    onOptionSelected = { childViewModel.selectQuizOption(it) },
+                    onSubmit = {
+                        // Soal terakhir -> XP dihitung, disimpan ke Firestore, lalu ke layar selesai.
+                        // Return null untuk soal biasa maupun tap ganda (XP tidak dobel).
+                        val result = childViewModel.submitAnswerAndProceed(parentUid)
+                        if (result != null) {
+                            onQuizCompleted(result.readingLog, result.pointsEarned)
+                            navController.navigate(Screen.QuizComplete.route) {
+                                popUpTo(Screen.BookDetail.route) { inclusive = true }
+                            }
+                        }
+                    },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
         }
 
         composable(Screen.QuizComplete.route) {
+            val quizResult = childState.lastQuizResult
             KuisSelesaiScreen(
                 childName = childName,
-                bookTitle = parentState.lastCompletedStoryTitle,
-                quizScore = parentState.lastQuizScore,
-                earnedPoints = parentState.lastEarnedPoints,
+                bookTitle = quizResult?.bookTitle ?: parentState.lastCompletedStoryTitle,
+                quizScore = quizResult?.scorePercentage ?: parentState.lastQuizScore,
+                earnedPoints = quizResult?.pointsEarned ?: parentState.lastEarnedPoints,
+                correctAnswers = quizResult?.correctAnswers ?: 0,
+                totalQuestions = quizResult?.totalQuestions ?: 0,
+                durationSeconds = quizResult?.durationSeconds ?: 0,
+                // Total poin real-time (listener Firestore), bukan angka statis
+                totalPoints = childState.availableCoins,
+                newlyUnlockedStickers = quizResult?.newlyUnlockedStickers.orEmpty(),
+                nextLockedSticker = childState.stickers.firstOrNull { !it.isUnlocked },
+                saveStatus = childState.quizSaveStatus,
                 onClaimReward = {
+                    // Hadiah sudah tersimpan saat kuis selesai; arahkan ke Pohon Kisah untuk disiram
                     navController.navigate(Screen.StoryTree.route) {
-                        popUpTo(Screen.Dashboard.route)
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
                     }
                 },
                 onReadMoreBooks = {
@@ -182,8 +313,13 @@ fun LituturAppNavigation(
         composable(Screen.StoryTree.route) {
             PohonKisahScreen(
                 childName = childName,
-                childPoints = childPoints,
+                childPoints = childState.availableCoins, // header menampilkan saldo koin
                 storiesCount = storiesCount,
+                treeGrowth = childState.treeGrowth,
+                stickers = childState.stickers,
+                isWateredToday = childState.isWateredToday,
+                waterRewardPoints = ChildRewards.WATER_TREE_POINTS,
+                onWaterTree = { childViewModel.waterTree(parentUid) },
                 onRequestParentMode = { showPinDialog = true },
                 onNavigateToAlbum = { navigateChildTab(2) },
                 onBottomTabSelected = { tab -> navigateChildTab(tab) }
@@ -195,6 +331,12 @@ fun LituturAppNavigation(
                 childName = childName,
                 childPoints = childPoints,
                 storiesCount = storiesCount,
+                stickers = childState.stickers,
+                coins = childState.availableCoins,
+                mysteryBoxCost = ChildRewards.MYSTERY_BOX_COST,
+                revealedSticker = childState.mysteryBoxReveal,
+                onOpenMysteryBox = { childViewModel.openMysteryBox(parentUid) },
+                onDismissReveal = { childViewModel.dismissMysteryBoxReveal() },
                 onRequestParentMode = { showPinDialog = true },
                 onBottomTabSelected = { tab -> navigateChildTab(tab) }
             )
@@ -222,6 +364,23 @@ fun LituturNavGraph(
                 } else {
                     parentViewModel.loadParentDashboard(authState.parentUser, authState.children)
                     currentScreen = LituturScreen.PARENT_MAIN
+                }
+            }
+        }
+    }
+
+    // Ilustrasi & stiker: baca registry Cloudinary, lalu (jika login) unggah gambar yang belum
+    // dipindahkan. Hanya berjalan sekali per sesi; gambar yang sudah ada tidak diunggah ulang.
+    LaunchedEffect(authState.isLoggedIn) {
+        CloudinaryAssetSync.loadRegistry()
+        if (authState.isLoggedIn) {
+            CloudinaryAssetSync.syncAll().onSuccess { report ->
+                if (report.uploaded > 0 || report.failed.isNotEmpty()) {
+                    val message = buildString {
+                        append("${report.uploaded} ilustrasi/stiker dipindahkan ke Cloudinary")
+                        if (report.failed.isNotEmpty()) append(", ${report.failed.size} gagal (dicoba lagi nanti)")
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -416,12 +575,12 @@ fun LituturNavGraph(
             LituturScreen.CHILD_MODE -> {
                 LituturAppNavigation(
                     parentState = parentState,
-                    onQuizCompleted = { bookTitle, quizScore, pointsEarned ->
-                        parentViewModel.completeChildReadingAndQuiz(
-                            storyTitle = bookTitle,
-                            quizScore = quizScore,
-                            pointsEarned = pointsEarned
-                        )
+                    onQuizCompleted = { log, pointsEarned ->
+                        // Firestore sudah ditulis oleh ChildViewModel; di sini hanya sinkron state orang tua
+                        parentViewModel.applyChildQuizResult(log, pointsEarned)
+                    },
+                    onSyncChildProgress = { child, logs ->
+                        parentViewModel.syncChildProgress(child, logs)
                     },
                     onReturnToParentMode = {
                         currentScreen = LituturScreen.PARENT_MAIN

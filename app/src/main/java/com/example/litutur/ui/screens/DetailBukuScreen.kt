@@ -22,17 +22,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.litutur.data.model.CeritaBukuModel
 import com.example.litutur.ui.components.TactileBox
 import com.example.litutur.ui.theme.*
 
 @Composable
 fun DetailBukuScreen(
     bookTitle: String = "Singa yang Baik Hati",
+    book: CeritaBukuModel? = null,
+    isFavorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {},
     onBackClick: () -> Unit = {},
     onStartReading: () -> Unit = {}
 ) {
-    var isFavorite by remember { mutableStateOf(false) }
     var selectedMode by remember { mutableStateOf("narrated") }
+
+    // Buku belum selesai dimuat: tampilkan loading
+    if (book == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(LituturBgStart, LituturBgMid, LituturBgEnd))),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = LituturPurple)
+        }
+        return
+    }
+
+    val hasNarration = book.chapters.any { !it.audioUrl.isNullOrBlank() }
 
     Scaffold(
         topBar = {
@@ -105,8 +123,8 @@ fun DetailBukuScreen(
                     .background(LituturSurfaceHigh)
             ) {
                 AsyncImage(
-                    model = "https://lh3.googleusercontent.com/aida-public/AB6AXuDX-opz_jVCmK7BHSgKcb5mUBEKuHkjwPBJuTOlupKaFV7qvy37MpggpQhFgjyXw4zUjpY_tLmSXTU48ZW6t9bxVwkMBGnSEcEaT31H5VV2n58rFJmutqmdLihzSHP_rA4SvwxTi4AJbzOWUUVDqSRuvvkjIfH3MDiSb6NvReYYfBP2xExf9wKFybQ1t_YAEQExC8lwPtk3BXknPfpXeXsLE0F8EXUNW_AAomtn9rBQ",
-                    contentDescription = "Cover Buku Leo",
+                    model = book.coverUrl,
+                    contentDescription = "Cover ${book.title}",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -119,20 +137,24 @@ fun DetailBukuScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(Color.White.copy(alpha = 0.95f))
-                            .padding(horizontal = 10.dp, vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(Icons.Default.VolumeUp, contentDescription = null, tint = LituturPrimary, modifier = Modifier.size(16.dp))
-                        Text("ADA SUARA NARASI", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturPrimary)
+                    if (hasNarration) {
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(Color.White.copy(alpha = 0.95f))
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Default.VolumeUp, contentDescription = null, tint = LituturPrimary, modifier = Modifier.size(16.dp))
+                            Text("ADA SUARA NARASI", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturPrimary)
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.size(1.dp))
                     }
 
                     IconButton(
-                        onClick = { isFavorite = !isFavorite },
+                        onClick = onToggleFavorite,
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
@@ -157,7 +179,7 @@ fun DetailBukuScreen(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(Icons.Default.MenuBook, contentDescription = null, tint = LituturSecondary, modifier = Modifier.size(16.dp))
-                    Text("5 Bab Interaktif", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                    Text("${book.chapters.size} Bab Interaktif", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                 }
             }
 
@@ -233,13 +255,15 @@ fun DetailBukuScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text(bookTitle, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                            Text(book.title.ifBlank { bookTitle }, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Text("★ 4.9", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
-                                Text("(320 ulasan)", fontSize = 12.sp, color = LituturOutline)
+                                Text("★ ${book.rating}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
+                                if (!book.badgeText.isNullOrBlank()) {
+                                    Text("• ${book.badgeText}", fontSize = 12.sp, color = LituturOutline)
+                                }
                             }
                         }
 
@@ -252,7 +276,7 @@ fun DetailBukuScreen(
                         ) {
                             Icon(Icons.Default.Favorite, contentDescription = null, tint = LituturPrimary, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Empati & Kebaikan", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturPrimary)
+                            Text(book.category, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = LituturPrimary)
                         }
                     }
 
@@ -266,7 +290,7 @@ fun DetailBukuScreen(
                         ) {
                             Column {
                                 Text("Tingkat Membaca", fontSize = 11.sp, color = LituturTextVariant)
-                                Text("Level 2 (Pemula)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                                Text(book.level, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                             }
                         }
                         Box(
@@ -278,8 +302,35 @@ fun DetailBukuScreen(
                         ) {
                             Column {
                                 Text("Estimasi Durasi", fontSize = 11.sp, color = LituturTextVariant)
-                                Text("8 Menit Baca", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
+                                Text("${book.durationMinutes} Menit Baca", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = LituturTextDark)
                             }
+                        }
+                    }
+
+                    if (book.sinopsis.isNotBlank()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Tentang Cerita", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturOutline)
+                            Text(book.sinopsis, fontSize = 14.sp, lineHeight = 21.sp, color = LituturTextDark)
+                        }
+                    }
+
+                    if (book.moralCerita.isNotBlank()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(LituturTertiaryFixed)
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.Lightbulb, contentDescription = null, tint = LituturTertiary, modifier = Modifier.size(18.dp))
+                            Text(
+                                "Pesan moral: ${book.moralCerita}",
+                                fontSize = 12.sp,
+                                lineHeight = 17.sp,
+                                color = LituturTextDark
+                            )
                         }
                     }
                 }
@@ -324,7 +375,7 @@ fun DetailBukuScreen(
                 ) {
                     Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = LituturGoldText, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("+15 Koin Emas setelah kuis selesai! 🪙", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
+                    Text("Dapatkan hingga +25 Poin setelah kuis selesai! 🪙", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LituturGoldText)
                 }
             }
         }
